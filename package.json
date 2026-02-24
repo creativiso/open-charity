@@ -1,36 +1,4 @@
 {
-  "name": "opencharity",
-  "version": "1.0.0",
-  "description": "opencharity platform",
-  "main": "index.js",
-  "repository": "https://github.com/creativiso/open-charity.git",
-  "author": "Elena Karabeteva <e.karabeteva6@gmail.com>",
-  "license": "AGPL-3.0-or-later",
-  "private": false,
-  "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "connect-session-sequelize": "^8.0.5",
-    "cors": "^2.8.6",
-    "csurf": "^1.11.0",
-    "dotenv": "^17.3.1",
-    "ejs": "^4.0.1",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.2.1",
-    "express-session": "^1.19.0",
-    "express-validator": "^7.3.1",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "multer": "^2.0.2",
-    "mysql2": "^3.18.0",
-    "sequelize": "^6.37.7",
-    "sharp": "^0.34.5"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14",
-    "sequelize-cli": "^6.6.5"
-  }
+  "private": true,
+  "workspaces": ["packages/*"]
 }
