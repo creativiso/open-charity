@@ -6,6 +6,8 @@ import helmet from "helmet";
 import path from "path";
 import expressLayouts from "express-ejs-layouts";
 
+import router from '../router';
+
 dotenv.config();
 
 const app: Application = express();
@@ -38,7 +40,7 @@ app.use(expressLayouts);
 
 app.set("layout", "layouts/main");
 
-//app.use(router);
+app.use(router);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const status = err.status || 500;
