@@ -8,16 +8,13 @@
         "start": "node dist/server.js"
     },
     "dependencies": {
-        "connect-session-sequelize": "^8.0.5",
         "cors": "^2.8.6",
         "dotenv": "^17.3.1",
         "ejs": "^4.0.1",
         "express": "^5.2.1",
         "express-ejs-layouts": "^2.5.1",
         "express-rate-limit": "^8.2.1",
-        "express-session": "^1.19.0",
         "helmet": "^8.1.0",
-        "lusca": "^1.7.0",
         "mysql2": "^3.18.0",
         "sequelize": "^6.37.7"
     },
@@ -25,8 +22,6 @@
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.6",
         "@types/express-ejs-layouts": "^2.5.4",
-        "@types/express-session": "^1.18.2",
-        "@types/lusca": "^1.7.5",
         "@types/node": "^25.3.0",
         "add": "^2.0.6",
         "ts-node": "^10.9.2",
