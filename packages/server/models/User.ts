@@ -36,7 +36,14 @@ User.init(
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
-            validate: { isEmail: true },
+            validate: {
+                isEmail: {
+                    msg: "Invalid email",
+                },
+                notEmpty: {
+                    msg: "Email cannot be empty",
+                },
+            },
         },
         passwordHash: {
             type: DataTypes.STRING,
