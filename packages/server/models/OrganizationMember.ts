@@ -74,3 +74,5 @@ OrganizationMember.init(
 
 OrganizationMember.belongsTo(Organization);
 OrganizationMember.belongsTo(User);
+
+export default OrganizationMember;
