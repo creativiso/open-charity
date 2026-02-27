@@ -1,0 +1,42 @@
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+main {
+    flex: 1;
+}
+
+.error-page {
+    text-align: center;
+    padding-top: 50px;
+}
+
+.status-code {
+    font-size: 100px;
+    font-weight: bold;
+    margin: 0;
+    color: #555;
+}
+
+.error-red {
+    color: #e74c3c;
+}
+
+.btn-custom {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.btn-custom:hover {
+    background: #0056b3;
+    color: white;
+}
