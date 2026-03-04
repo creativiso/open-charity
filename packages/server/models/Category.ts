@@ -2,21 +2,17 @@ import { Model, DataTypes } from "sequelize";
 
 import sequelize from "../config/database";
 
+import { generateSlug } from "./utils";
+
 class Category extends Model {
+    declare id: string;
     declare name: string;
     declare slug: string;
-
-    generateSlug() {
-        if (this.name && !this.slug) {
-            this.slug = this.name
-                .toString()
-                .toLowerCase()
-                .trim()
-                .replace(/\s+/g, "-")
-                .replace(/[^\w\-]+/g, "")
-                .replace(/\-\-+/g, "-");
-        }
-    }
+    declare description: string | null;
+    declare isActive: boolean;
+    declare displayOrder: number;
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
 }
 
 Category.init(
@@ -52,6 +48,18 @@ Category.init(
     },
     {
         timestamps: true,
+        hooks: {
+            beforeValidate: (category: Category) => {
+                if (category.name && !category.slug) {
+                    category.slug = generateSlug(category.name);
+                }
+            },
+            beforeUpdate: (category: Category) => {
+                if (category.changed("name")) {
+                    category.slug = generateSlug(category.name);
+                }
+            },
+        },
         scopes: {
             active: {
                 where: {

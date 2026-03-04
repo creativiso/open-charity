@@ -2,10 +2,13 @@ import { Model, DataTypes, Op } from "sequelize";
 
 import sequelize from "../config/database";
 
+import { generateSlug } from "./utils";
+
 class Campaign extends Model {
     declare id: string;
     declare organizationId: string;
     declare title: string;
+    declare slug: string;
     declare summary: string;
     declare description: string;
     declare categoryId: string;
@@ -57,6 +60,11 @@ Campaign.init(
             validate: {
                 len: [3, 255],
             },
+        },
+        slug: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
         },
         summary: {
             type: DataTypes.STRING(250),
@@ -134,6 +142,13 @@ Campaign.init(
         modelName: "Campaign",
         timestamps: true,
         paranoid: true,
+        hooks: {
+            beforeValidate: (campaign: Campaign) => {
+                if (campaign.title && !campaign.slug) {
+                    campaign.slug = generateSlug(campaign.title);
+                }
+            },
+        },
         scopes: {
             active: {
                 where: {

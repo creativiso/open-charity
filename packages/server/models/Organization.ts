@@ -2,9 +2,12 @@ import { Model, DataTypes } from "sequelize";
 
 import sequelize from "../config/database";
 
+import { generateSlug } from "./utils";
+
 class Organization extends Model {
     declare id: string;
     declare name: string;
+    declare slug: string;
     declare description: string;
     declare websiteUrl: string | null;
     declare contactEmail: string;
@@ -27,6 +30,11 @@ Organization.init(
             validate: {
                 len: [3, 80],
             },
+        },
+        slug: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
         },
         description: {
             type: DataTypes.STRING,
@@ -71,6 +79,13 @@ Organization.init(
     },
     {
         timestamps: true,
+        hooks: {
+            beforeValidate: (org: Organization) => {
+                if (org.name && !org.slug) {
+                    org.slug = generateSlug(org.name);
+                }
+            },
+        },
         scopes: {
             active: {
                 where: {
