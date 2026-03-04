@@ -7,6 +7,8 @@ import path from "path";
 import expressLayouts from "express-ejs-layouts";
 
 import router from "../router";
+
+import "../models/index";
 import sequelize from "../config/database";
 
 dotenv.config();
@@ -62,7 +64,7 @@ async function startServer() {
         await sequelize.authenticate();
         console.log("Database connection has been established successfully.");
 
-        await sequelize.sync({ alter: true });
+        await sequelize.sync();
         console.log("Models synced and tables verified.");
 
         app.listen(PORT, () => {
