@@ -1,7 +1,6 @@
 import { Model, DataTypes } from "sequelize";
 
 import sequelize from "../config/database";
-import Organization from "./Organization";
 
 class Category extends Model {
     declare name: string;
@@ -68,9 +67,5 @@ Category.init(
         modelName: "Category",
     },
 );
-
-//TODO: Uncomment after having created the other models
-
-// Category.hasMany(Campaigns)
 
 export default Category;

@@ -2,13 +2,6 @@ import { Model, DataTypes, Op } from "sequelize";
 
 import sequelize from "../config/database";
 
-import Organization from "./Organization";
-import Category from "./Category";
-import User from "./User";
-// import CampaignSupportMethod from "./CampaignSupportMethod";
-// import CampaignEvent from "./CampaignEvent";
-// import CampaignModeration from "./CampaignModeration";
-
 class Campaign extends Model {
     declare id: string;
     declare organizationId: string;
@@ -18,10 +11,16 @@ class Campaign extends Model {
     declare categoryId: string;
     declare locationRegion: string;
     declare locationCity: string;
-    declare status: 'Pending' | 'Active' | 'Expired' | 'Ended' | 'Rejected' | 'Hidden';
+    declare status:
+        | "Pending"
+        | "Active"
+        | "Expired"
+        | "Ended"
+        | "Rejected"
+        | "Hidden";
     declare deadlineAt: Date;
     declare coverImageUrl: string;
-    declare createdByUserId: string;
+    declare creatorId: string;
     declare deletedAt: Date | null;
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
@@ -81,10 +80,26 @@ Campaign.init(
             type: DataTypes.STRING,
         },
         status: {
-            type: DataTypes.ENUM('Pending', 'Active', 'Expired', 'Ended', 'Rejected', 'Hidden'),
-            defaultValue: 'Pending',
+            type: DataTypes.ENUM(
+                "Pending",
+                "Active",
+                "Expired",
+                "Ended",
+                "Rejected",
+                "Hidden",
+            ),
+            defaultValue: "Pending",
             validate: {
-                isIn: [['Pending', 'Active', 'Expired', 'Ended', 'Rejected', 'Hidden']],
+                isIn: [
+                    [
+                        "Pending",
+                        "Active",
+                        "Expired",
+                        "Ended",
+                        "Rejected",
+                        "Hidden",
+                    ],
+                ],
             },
         },
         deadlineAt: {
@@ -105,7 +120,7 @@ Campaign.init(
                 isUrl: true,
             },
         },
-        createdByUserId: {
+        creatorId: {
             type: DataTypes.UUID,
             allowNull: false,
         },
@@ -122,13 +137,13 @@ Campaign.init(
         scopes: {
             active: {
                 where: {
-                    status: 'Active',
+                    status: "Active",
                     deletedAt: null,
                 },
             },
             notExpired: {
                 where: {
-                    status: { [Op.ne]: 'Expired' },
+                    status: { [Op.ne]: "Expired" },
                     deletedAt: null,
                 },
             },
@@ -153,15 +168,7 @@ Campaign.init(
                 };
             },
         },
-    }
+    },
 );
-
-//TODO: Uncomment after having created the other models
-// Campaign.belongsTo(Organization);
-// Campaign.belongsTo(Category);
-// Campaign.belongsTo(User, { as: 'creator', foreignKey: 'createdByUserId' });
-// Campaign.hasOne(CampaignSupportMethod);
-// Campaign.hasOne(CampaignEvent);
-// Campaign.hasMany(CampaignModeration);
 
 export default Campaign;

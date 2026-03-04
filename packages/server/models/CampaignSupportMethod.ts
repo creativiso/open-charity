@@ -1,6 +1,6 @@
 import { Model, DataTypes } from "sequelize";
+
 import sequelize from "../config/database";
-import Campaign from "./Campaign";
 
 class CampaignSupportMethod extends Model {
     declare id: string;
@@ -23,7 +23,9 @@ class CampaignSupportMethod extends Model {
             this.otherSupportInfo,
             this.otherSupportLink,
         ];
-        return fields.some((field) => field !== null && field !== undefined && field !== "");
+        return fields.some(
+            (field) => field !== null && field !== undefined && field !== "",
+        );
     }
 }
 
@@ -72,7 +74,6 @@ CampaignSupportMethod.init(
         modelName: "CampaignSupportMethod",
         timestamps: true,
         validate: {
-
             atLeastOneFieldRequired() {
                 if (
                     !this.donationLink &&
@@ -82,15 +83,13 @@ CampaignSupportMethod.init(
                     !this.otherSupportInfo &&
                     !this.otherSupportLink
                 ) {
-                    throw new Error("At least one support method (link or info) must be provided.");
+                    throw new Error(
+                        "At least one support method (link or info) must be provided.",
+                    );
                 }
             },
         },
-    }
+    },
 );
-
-//TODO: Uncomment after having created the other models
-
-// CampaignSupportMethod.belongsTo(Campaign, { foreignKey: 'campaignId' });
 
 export default CampaignSupportMethod;

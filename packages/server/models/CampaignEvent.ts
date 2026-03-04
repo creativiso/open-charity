@@ -1,5 +1,7 @@
 import { Model, DataTypes } from "sequelize";
+
 import sequelize from "../config/database";
+
 import Campaign from "./Campaign";
 
 class CampaignEvent extends Model {
@@ -46,22 +48,20 @@ CampaignEvent.init(
             beforeValidate: async (event: CampaignEvent) => {
                 if (event.campaignId && event.eventDateTime) {
                     const campaign = await Campaign.findByPk(event.campaignId);
-                    
+
                     if (!campaign) {
                         throw new Error("Associated campaign not found.");
                     }
 
                     if (event.eventDateTime > campaign.deadlineAt) {
-                        throw new Error("Event date/time cannot be later than the campaign deadline.");
+                        throw new Error(
+                            "Event date/time cannot be later than the campaign deadline.",
+                        );
                     }
                 }
             },
         },
-    }
+    },
 );
-
-//TODO: Uncomment after having created the other models
-
-// CampaignEvent.belongsTo(Campaign, { foreignKey: 'campaignId' });
 
 export default CampaignEvent;

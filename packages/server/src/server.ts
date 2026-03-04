@@ -1,12 +1,12 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
-import cors from 'cors';
+import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import path from "path";
 import expressLayouts from "express-ejs-layouts";
 
-import router from '../router';
+import router from "../router";
 import sequelize from "../config/database";
 
 dotenv.config();
@@ -60,7 +60,10 @@ const PORT = process.env.PORT || 3000;
 async function startServer() {
     try {
         await sequelize.authenticate();
-        console.log('Database connection has been established successfully.');
+        console.log("Database connection has been established successfully.");
+
+        await sequelize.sync({ alter: true });
+        console.log("Models synced and tables verified.");
 
         app.listen(PORT, () => {
             console.log(
@@ -68,7 +71,7 @@ async function startServer() {
             );
         });
     } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        console.error("Unable to connect to the database:", error);
         process.exit(1);
     }
 }

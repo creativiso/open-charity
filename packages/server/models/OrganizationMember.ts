@@ -5,7 +5,17 @@ import sequelize from "../config/database";
 import Organization from "./Organization";
 import User from "./User";
 
-class OrganizationMember extends Model {}
+class OrganizationMember extends Model {
+    declare id: string;
+    declare organizationId: string;
+    declare userId: string;
+    declare role: "admin" | "editor";
+    declare status: "Pending" | "Active" | "Rejected";
+    declare joinedAt: Date;
+
+    declare readonly createdAt: Date;
+    declare readonly updatedAt: Date;
+}
 
 OrganizationMember.init(
     {
@@ -71,8 +81,5 @@ OrganizationMember.init(
         modelName: "OrganizationMember",
     },
 );
-
-OrganizationMember.belongsTo(Organization);
-OrganizationMember.belongsTo(User);
 
 export default OrganizationMember;

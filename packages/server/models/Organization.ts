@@ -1,9 +1,18 @@
 import { Model, DataTypes } from "sequelize";
 
 import sequelize from "../config/database";
-import User from "./User";
 
-class Organization extends Model {}
+class Organization extends Model {
+    declare id: string;
+    declare name: string;
+    declare description: string;
+    declare websiteUrl: string | null;
+    declare contactEmail: string;
+    declare locationRegion: string;
+    declare locationCity: string;
+    declare isVerified: boolean;
+    declare status: "Pending" | "Active" | "Rejected";
+}
 
 Organization.init(
     {
@@ -53,7 +62,7 @@ Organization.init(
         },
         isVerified: {
             type: DataTypes.BOOLEAN,
-            defaultValue: "false",
+            defaultValue: false,
         },
         status: {
             type: DataTypes.ENUM("Pending", "Active", "Rejected"),
@@ -85,14 +94,5 @@ Organization.init(
         modelName: "Organization",
     },
 );
-
-//TODO: Uncomment after having created the other models
-
-// Organization.hasMany(OrganizationMember);
-// Organization.hasMany(Campaign);
-// Organization.belongsToMany(User, {
-//     through: OrganizationMember,
-//     foreignKey: 'organizationId'
-// })
 
 export default Organization;

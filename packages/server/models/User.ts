@@ -68,15 +68,4 @@ User.init(
     },
 );
 
-//TODO: Uncomment after having created the other models
-
-// User.hasMany(OrganizationMember, {
-//     foreignKey: "userId",
-// });
-
-// User.hasMany(Campaign, {
-//     foreignKey: "creatorId",
-//     as: "createdCampaigns",
-// });
-
 export default User;
