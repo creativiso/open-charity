@@ -1,4 +1,5 @@
 import sequelize from "../config/database";
+
 import User from "./User";
 import Organization from "./Organization";
 import OrganizationMember from "./OrganizationMember";

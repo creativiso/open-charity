@@ -6,10 +6,10 @@ import helmet from "helmet";
 import path from "path";
 import expressLayouts from "express-ejs-layouts";
 
-import router from "../router";
+import router from "./router";
 
-import "../models/index";
-import sequelize from "../config/database";
+import "./models/index";
+import sequelize from "./config/database";
 
 dotenv.config();
 

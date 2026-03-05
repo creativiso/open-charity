@@ -9,5 +9,5 @@
         "rootDir": "./",
         "strict": true
     },
-    "include": ["src/**/*", "config/**/*"]
+    "include": ["src/**/*", "src/config/**/*"]
 }

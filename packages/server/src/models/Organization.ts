@@ -2,7 +2,7 @@ import { Model, DataTypes } from "sequelize";
 
 import sequelize from "../config/database";
 
-import { generateSlug } from "./utils";
+import { generateSlug } from "../utils";
 
 class Organization extends Model {
     declare id: string;
