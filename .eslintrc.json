@@ -1,0 +1,39 @@
+{
+  "env": {
+    "node": true,
+    "es2022": true,
+    "browser": true,
+    "jest": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "node"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:node/recommended",
+    "prettier"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "globals": {
+    "Express": "readonly",
+    "bootstrap": "readonly"
+  },
+  "rules": {
+    "no-console": "warn",
+    "@typescript-eslint/no-explicit-any": "off",
+    "node/no-missing-import": "off",
+    "no-unused-vars": "off",
+    "node/no-unpublished-import": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "node/no-unsupported-features/es-syntax": [
+      "error",
+      {
+        "ignores": ["modules"]
+      }
+    ],
+    "semi": ["error", "always"]
+  }
+}
