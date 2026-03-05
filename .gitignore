@@ -14,7 +14,7 @@ mysql-data/
 
 # IDE - Visual Studio Code
 .vscode/
-/coverage/
+coverage/
 
 # Build and Logs
 dist/
