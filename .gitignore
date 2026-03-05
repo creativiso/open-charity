@@ -13,12 +13,8 @@ mysql-data/
 *.log
 
 # IDE - Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
+.vscode/
+/coverage/
 
 # Build and Logs
 dist/
