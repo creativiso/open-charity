@@ -1,16 +1,20 @@
-import '../../../config/env-validator';
+import dotenv from 'dotenv';
 
 import express, { Application, Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
 import path from 'path';
 import expressLayouts from 'express-ejs-layouts';
 
-import healthRoutes from '../routes/healthRoutes';
+import healthRoutes from './routes/healthRoutes';
 
-import router from '../router';
+import router from './router';
+
+import './models/index';
+import sequelize from './config/database';
+
+import '../../../config/env-validator';
 
 dotenv.config();
 
@@ -60,6 +64,22 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+
+async function startServer() {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connection has been established successfully.');
+
+    await sequelize.sync();
+    console.log('Models synced and tables verified.');
+
+    app.listen(PORT, () => {
+      console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+    throw new Error('Failed to start server');
+  }
+}
+
+startServer();
