@@ -11,6 +11,7 @@ import expressLayouts from 'express-ejs-layouts';
 import healthRoutes from '../routes/healthRoutes';
 
 import router from '../router';
+import sequelize from '../config/database';
 
 dotenv.config();
 
@@ -60,6 +61,19 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+
+async function startServer() {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connection has been established successfully.');
+
+    app.listen(PORT, () => {
+      console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+    throw new Error('Failed to start server');
+  }
+}
+
+startServer();
