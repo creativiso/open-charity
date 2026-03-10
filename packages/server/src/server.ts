@@ -1,17 +1,20 @@
-import '../../../config/env-validator';
+import dotenv from 'dotenv';
 
 import express, { Application, Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
 import path from 'path';
 import expressLayouts from 'express-ejs-layouts';
 
-import healthRoutes from '../routes/healthRoutes';
+import healthRoutes from './routes/healthRoutes';
 
-import router from '../router';
-import sequelize from '../config/database';
+import router from './router';
+
+import './models/index';
+import sequelize from './config/database';
+
+import '../../../config/env-validator';
 
 dotenv.config();
 
@@ -66,6 +69,9 @@ async function startServer() {
   try {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
+
+    await sequelize.sync();
+    console.log('Models synced and tables verified.');
 
     app.listen(PORT, () => {
       console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

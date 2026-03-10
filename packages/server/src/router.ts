@@ -1,9 +1,9 @@
-import { Router } from "express";
+import { Router } from 'express';
 
-import adminController from "./controllers/api/adminController";
-import authController from "./controllers/authController";
-import campaignsController from "./controllers/campaignsController";
-import organizationsController from "./controllers/organizationsController";
+import adminController from './controllers/api/adminController';
+import authController from './controllers/authController';
+import campaignsController from './controllers/campaignsController';
+import organizationsController from './controllers/organizationsController';
 
 const router: Router = Router();
 
