@@ -3,6 +3,9 @@ import { requireAuth, requireAdmin } from '../middleware/auth';
 import { requireAdminJWT, verifyToken } from '../middleware/jwtAuth';
 import { loadUserOrganizations, requireOrgAdmin, requireOrgEditor } from '../middleware/orgContext';
 import {
+  createMember,
+  createOrganization,
+  createUser,
   testGenerateToken,
   testHash,
   testLoadUserOrganizations,
@@ -41,8 +44,8 @@ testRouter.get(
   testRequireOrgAdmin
 );
 
-// testRouter.get('/seed/user', createUser);
-// testRouter.get('/seed/organization', createOrganization);
-// testRouter.get('/seed/member', createMember);
+testRouter.get('/seed/user', createUser);
+testRouter.get('/seed/organization', createOrganization);
+testRouter.get('/seed/member', createMember);
 
 export default testRouter;

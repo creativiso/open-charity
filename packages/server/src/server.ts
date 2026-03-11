@@ -48,7 +48,7 @@ app.use(expressLayouts);
 
 app.set('layout', 'layouts/main');
 
-// app.use('/dev', testRouter); --> for middleware testing
+app.use('/dev', testRouter); //--> for middleware testing
 
 app.use(router);
 app.use('/api', healthRoutes);

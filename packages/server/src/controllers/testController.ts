@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { comparePassword, hashPassword, validatePasswordStrength } from '../middleware/auth';
-import { User } from '../models';
+import { Organization, OrganizationMember, User } from '../models';
 import { generateToken } from '../middleware/jwtAuth';
 
 export const testHash = async (req: Request, res: Response, next: NextFunction) => {
@@ -88,60 +88,60 @@ export const testRequireOrgAdmin = (req: Request, res: Response, next: NextFunct
   });
 };
 
-// export const createUser =  async (req: Request, res: Response, next: NextFunction) => {
-//   const hash = await hashPassword('TestUser123');
-//   console.log(hash);
-//   const user = await User.create({
-//     name: 'Test User',
-//     email: 'test@test.com',
-//     passwordHash: hash,
-//     role: 'user',
-//   });
-//   res.status(201).json({ message: 'User created', user });
-// };
+export const createUser = async (req: Request, res: Response, next: NextFunction) => {
+  const hash = await hashPassword('TestUser123');
+  console.log(hash);
+  const user = await User.create({
+    name: 'Test User',
+    email: 'test@test.com',
+    passwordHash: hash,
+    role: 'user',
+  });
+  res.status(201).json({ message: 'User created', user });
+};
 
-// export const createOrganization = async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     const organization = await Organization.create({
-//       name: 'Test Organization',
-//       slug: 'test-organization',
-//       description: 'Test organization description',
-//       contactEmail: 'org@test.com',
-//       websiteUrl: 'https://test.com',
-//       locationRegion: 'Test Region',
-//       locationCity: 'Test City',
-//       isVerified: false,
-//       status: 'Active',
-//     });
+export const createOrganization = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const organization = await Organization.create({
+      name: 'Test Organization',
+      slug: 'test-organization',
+      description: 'Test organization description',
+      contactEmail: 'org@test.com',
+      websiteUrl: 'https://test.com',
+      locationRegion: 'Test Region',
+      locationCity: 'Test City',
+      isVerified: false,
+      status: 'Active',
+    });
 
-//     res.status(201).json({ message: 'Organization created', organization });
-//   } catch (error: any) {
-//     res.status(500).json({ error: true, message: error.message });
-//   }
-// }
+    res.status(201).json({ message: 'Organization created', organization });
+  } catch (error: any) {
+    res.status(500).json({ error: true, message: error.message });
+  }
+};
 
-// export const createMember = async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     const { userId, organizationId, role } = req.query;
-//     console.log(userId);
-//     console.log(organizationId);
-//     console.log(role);
+export const createMember = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId, organizationId, role } = req.query;
+    console.log(userId);
+    console.log(organizationId);
+    console.log(role);
 
-//     if (!userId || !organizationId) {
-//       res.status(400).json({ error: true, message: 'userId and organizationId are required' });
-//       return;
-//     }
+    if (!userId || !organizationId) {
+      res.status(400).json({ error: true, message: 'userId and organizationId are required' });
+      return;
+    }
 
-//     const member = await OrganizationMember.create({
-//       userId: userId as string,
-//       organizationId: organizationId as string,
-//       role: (role as string) || 'editor',
-//       status: 'Active',
-//       joinedAt: new Date(),
-//     });
+    const member = await OrganizationMember.create({
+      userId: userId as string,
+      organizationId: organizationId as string,
+      role: (role as string) || 'editor',
+      status: 'Active',
+      joinedAt: new Date(),
+    });
 
-//     res.status(201).json({ message: 'Member created', member });
-//   } catch (error: any) {
-//     res.status(500).json({ error: true, message: error.message });
-//   }
-// }
+    res.status(201).json({ message: 'Member created', member });
+  } catch (error: any) {
+    res.status(500).json({ error: true, message: error.message });
+  }
+};
