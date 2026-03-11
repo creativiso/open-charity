@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import mysql from 'mysql2/promise';
+import env from '../config/env-validator';
 
 dotenv.config();
 
@@ -11,11 +12,11 @@ async function waitForDb() {
   let attempts = 0;
 
   const config = {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'password',
-    database: process.env.DB_NAME || 'charity_db',
+    host: env.DB_HOST || 'localhost',
+    port: env.DB_PORT || 3306,
+    user: env.DB_USER || 'root',
+    password: env.DB_PASSWORD || 'password',
+    database: env.DB_NAME || 'charity_db',
   };
 
   console.log('DB CONFIG:', config);

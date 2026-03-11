@@ -14,15 +14,14 @@ import router from './router';
 import './models/index';
 import sequelize from './config/database';
 
-import '../../../config/env-validator';
-
+import env from '../../../config/env-validator';
 dotenv.config();
 
 const app: Application = express();
 
 const limiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  windowMs: Number(env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: Number(env.RATE_LIMIT_MAX_REQUESTS) || 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many requests, please try again in 15 minutes',
@@ -32,7 +31,7 @@ app.use(helmet());
 app.use(limiter);
 app.use(
   cors({
-    origin: process.env.BASE_URL,
+    origin: env.BASE_URL,
     credentials: true,
   })
 );
@@ -63,7 +62,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = env.PORT || 3000;
 
 async function startServer() {
   try {
@@ -74,7 +73,7 @@ async function startServer() {
     console.log('Models synced and tables verified.');
 
     app.listen(PORT, () => {
-      console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+      console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
     });
   } catch (error) {
     console.error('Unable to connect to the database:', error);
