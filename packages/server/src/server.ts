@@ -8,6 +8,7 @@ import path from 'path';
 import expressLayouts from 'express-ejs-layouts';
 
 import healthRoutes from './routes/healthRoutes';
+import testRouter from './routes/testRoutes';
 
 import router from './router';
 
@@ -15,7 +16,6 @@ import './models/index';
 import sequelize from './config/database';
 
 import '../../../config/env-validator';
-
 dotenv.config();
 
 const app: Application = express();
@@ -47,6 +47,8 @@ app.set('view engine', 'ejs');
 app.use(expressLayouts);
 
 app.set('layout', 'layouts/main');
+
+// app.use('/dev', testRouter); --> for middleware testing
 
 app.use(router);
 app.use('/api', healthRoutes);
