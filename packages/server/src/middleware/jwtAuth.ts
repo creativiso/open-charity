@@ -1,6 +1,7 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import User from '../models/User';
 import { Request, Response, NextFunction } from 'express';
+import env from '../../../../config/env-validator';
 
 export interface TokenPayload {
   id: string;
@@ -8,22 +9,16 @@ export interface TokenPayload {
 }
 
 export const generateToken = (user: User): string => {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret) {
-    throw new Error('JWT_SECRET is not defined in .env');
-  }
-
   const payload: TokenPayload = {
     id: user.id,
     role: user.role,
   };
 
   const options: SignOptions = {
-    expiresIn: (process.env.JWT_EXPIRES_IN as SignOptions['expiresIn']) || '1d',
+    expiresIn: (env.JWT_EXPIRES_IN as SignOptions['expiresIn']) || '1d',
   };
 
-  return jwt.sign(payload, secret, options);
+  return jwt.sign(payload, env.JWT_SECRET, options);
 };
 
 export const verifyToken = async (
@@ -41,20 +36,14 @@ export const verifyToken = async (
 
   const token = authHeader.split(' ')[1];
   //console.log(token);
-  const secret = process.env.JWT_SECRET;
 
   if (!token) {
     res.status(401).json({ message: 'Token required for access!' });
     return;
   }
 
-  if (!secret) {
-    res.status(500).json({ error: true, message: 'Server configuration error' });
-    return;
-  }
-
   try {
-    const decoded = jwt.verify(token, secret);
+    const decoded = jwt.verify(token, env.JWT_SECRET!);
     //console.log(decoded);
 
     const user = await User.findByPk((decoded as TokenPayload).id);
