@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import sequelize from '../config/database';
 import { createClient, RedisClientType } from 'redis';
+import env from '../../../../config/env-validator';
 
-const redisUrl = `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+const redisUrl = `redis://${env.REDIS_HOST || 'localhost'}:${env.REDIS_PORT || 6379}`;
 const redisClient: RedisClientType = createClient({
   url: redisUrl,
 });

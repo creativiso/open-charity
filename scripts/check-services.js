@@ -3,17 +3,18 @@ import { execSync } from 'child_process';
 import chalk from 'chalk';
 import mysql from 'mysql2/promise';
 import { createClient } from 'redis';
+import env from '../config/env-validator';
 
 dotenv.config();
 
 async function checkMySql() {
   try {
     const config = {
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || 'password',
-      database: process.env.DB_NAME || 'charity_db',
+      host: env.DB_HOST || 'localhost',
+      port: env.DB_PORT || 3306,
+      user: env.DB_USER || 'root',
+      password: env.DB_PASSWORD || 'password',
+      database: env.DB_NAME || 'charity_db',
     };
 
     const connection = await mysql.createConnection(config);
@@ -28,7 +29,7 @@ async function checkMySql() {
 
 async function checkRedis() {
   try {
-    const redisUrl = `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+    const redisUrl = `redis://${env.REDIS_HOST || 'localhost'}:${env.REDIS_PORT || 6379}`;
     //console.log('Checking Redis at:', redisUrl);
     const redisClient = createClient({ url: redisUrl });
 
