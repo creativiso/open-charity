@@ -8,7 +8,6 @@ import path from 'path';
 import expressLayouts from 'express-ejs-layouts';
 
 import healthRoutes from './routes/healthRoutes';
-import testRouter from './routes/testRoutes';
 
 import router from './router';
 
@@ -47,8 +46,6 @@ app.set('view engine', 'ejs');
 app.use(expressLayouts);
 
 app.set('layout', 'layouts/main');
-
-// app.use('/dev', testRouter); --> for middleware testing
 
 app.use(router);
 app.use('/api', healthRoutes);
