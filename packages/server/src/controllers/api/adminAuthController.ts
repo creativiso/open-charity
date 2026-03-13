@@ -16,7 +16,7 @@ adminAuthController.post(
     try {
       const user = await User.findOne({ where: { email } });
 
-      if (!user || user.role !== 'admin' || !user.validatePassword(password)) {
+      if (!user || user.role !== 'admin' || !(await user.validatePassword(password))) {
         res.status(401).json({ error: true, message: 'Invalid credentials' });
         return;
       }
