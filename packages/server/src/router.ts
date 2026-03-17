@@ -1,13 +1,13 @@
 import { Router } from 'express';
 
-import adminController from './controllers/api/adminController';
+import adminAuthController from './controllers/api/adminAuthController';
 import authController from './controllers/authController';
 import campaignsController from './controllers/campaignsController';
 import organizationsController from './controllers/organizationsController';
 
 const router: Router = Router();
 
-router.use('/admin', adminController);
+router.use('/api/admin/auth', adminAuthController);
 router.use('/auth', authController);
 router.use('/campaigns', campaignsController);
 router.use('/organizations', organizationsController);
