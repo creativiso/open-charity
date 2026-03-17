@@ -46,7 +46,7 @@ export const createOrganization = async (
         {
           model: OrganizationMember,
           where: { userId: creatorUserId },
-          attributes: ['role', 'status'],
+          attributes: ['role', 'status', 'joinedAt'],
         },
       ],
     }))!;
