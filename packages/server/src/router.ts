@@ -5,8 +5,6 @@ import authController from './controllers/authController';
 import campaignsController from './controllers/campaignsController';
 import organizationsController from './controllers/organizationsController';
 
-import { requireAdminJWT } from './middleware/jwtAuth';
-
 const router: Router = Router();
 
 router.use('/api/admin/auth', adminAuthController);
