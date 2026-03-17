@@ -101,7 +101,7 @@ authController.post('/logout', (req: Request, res: Response) => {
     }
 
     res.clearCookie('connect.sid');
-    res.status(200).json({ message: 'Logout successfully' });
+    res.status(200).json({ message: 'Logout successful' });
   });
 });
 

@@ -2,7 +2,7 @@ import { Request, Response, Router } from 'express';
 import { loginValidation } from '../../validators/userValidators';
 import { handleValidationErrors } from '../../middleware/handleValidationErrors';
 import { User } from '../../models';
-import { generateToken } from '../../middleware/jwtAuth';
+import { generateToken, requireAdminJWT, verifyToken } from '../../middleware/jwtAuth';
 
 const adminAuthController: Router = Router();
 
@@ -16,7 +16,7 @@ adminAuthController.post(
     try {
       const user = await User.findOne({ where: { email } });
 
-      if (!user || user.role !== 'admin' || !(await user.validatePassword(password))) {
+      if (!user || !(await user.validatePassword(password))) {
         res.status(401).json({ error: true, message: 'Invalid credentials' });
         return;
       }
@@ -36,6 +36,27 @@ adminAuthController.post(
     } catch (err) {
       console.error('Admin login error:' + err);
       res.status(500).json({ error: true, message: 'Login failed' });
+    }
+  }
+);
+
+adminAuthController.post(
+  '/refresh',
+  verifyToken,
+  requireAdminJWT,
+  (req: Request, res: Response) => {
+    const user = req.user!;
+
+    try {
+      const refreshToken = generateToken(user);
+
+      res.status(200).json({
+        message: 'Token refreshed successfully',
+        token: refreshToken,
+      });
+    } catch (err) {
+      console.error('Token refresh error:' + err);
+      res.status(500).json({ error: true, message: 'Token refresh failed' });
     }
   }
 );
