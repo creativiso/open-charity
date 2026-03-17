@@ -55,3 +55,27 @@ export const createOrganization = async (
     throw err;
   }
 };
+
+export const getOrganizationById = async (id: string, includeMembers: boolean = false) => {
+  const include: any[] = [];
+
+  if (includeMembers) {
+    include.push({
+      model: OrganizationMember,
+      attributes: ['id', 'userId', 'role', 'status', 'joinedAt'],
+    });
+  }
+
+  try {
+    return await Organization.findByPk(id, {
+      include,
+      attributes: {
+        include: [[sequelize.fn('COUNT', sequelize.col('OrganizationMembers.id')), 'memberCount']],
+      },
+      group: ['Organization.id'],
+    });
+  } catch (err) {
+    console.error('Could not get organization:', err);
+    throw err;
+  }
+};
