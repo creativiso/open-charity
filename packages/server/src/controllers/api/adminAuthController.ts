@@ -26,12 +26,7 @@ adminAuthController.post(
       res.status(200).json({
         message: 'Admin login successful',
         token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
+        user: user.toJSON(),
       });
     } catch (err) {
       console.error('Admin login error:' + err);
@@ -62,3 +57,11 @@ adminAuthController.post(
 );
 
 export default adminAuthController;
+
+adminAuthController.get('/me', verifyToken, requireAdminJWT, (req: Request, res: Response) => {
+  const user = req.user!;
+
+  res.status(200).json({
+    user: user.toJSON(),
+  });
+});

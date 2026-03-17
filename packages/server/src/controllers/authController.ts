@@ -3,7 +3,6 @@ import { registerValidation, loginValidation } from '../validators/userValidator
 import { handleValidationErrors } from '../middleware/handleValidationErrors';
 import { hashPassword, requireAuth } from '../middleware/auth';
 import { Organization, OrganizationMember, User } from '../models';
-import { error } from 'console';
 
 const authController: Router = Router();
 
@@ -28,12 +27,7 @@ authController.post(
 
       res.status(201).json({
         message: 'User registered successfully',
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
+        user: user.toJSON(),
       });
     } catch (err) {
       console.error('Registration error:', err);
@@ -77,12 +71,7 @@ authController.post(
 
           res.status(200).json({
             message: 'User logged in successfully',
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
-            },
+            user: user.toJSON(),
           });
         });
       });
