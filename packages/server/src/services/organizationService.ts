@@ -2,37 +2,14 @@ import { Op, WhereOptions } from 'sequelize';
 
 import { Organization, OrganizationMember, sequelize } from '../models';
 
+import {
+  CreateOrganizationData,
+  SearchOrganizationsFilters,
+  UpdateOrganizationData,
+} from '../types/organization.types';
+
 import { getPagination } from '../utils';
-
-interface CreateOrganizationData {
-  name: string;
-  description: string;
-  contactEmail: string;
-  locationRegion: string;
-  locationCity: string;
-  websiteUrl?: string;
-}
-
-interface UpdateOrganizationData {
-  name?: string;
-  description?: string;
-  contactEmail?: string;
-  locationRegion?: string;
-  locationCity?: string;
-  websiteUrl?: string;
-}
-
-interface SearchOrganizationsFilters {
-  region?: string;
-  city?: string;
-  status?: string;
-  search?: string;
-}
-
-interface pagination {
-  page?: number;
-  limit?: number;
-}
+import { Pagination } from '../types/pagination.types';
 
 export const createOrganization = async (
   data: CreateOrganizationData,
@@ -149,7 +126,7 @@ export const updateOrganization = async (
 
 export const searchOrganizations = async (
   filters: SearchOrganizationsFilters = {},
-  pagination: pagination = {}
+  pagination: Pagination = {}
 ) => {
   try {
     const { limit, offset } = getPagination(pagination.page, pagination.limit);
