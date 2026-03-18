@@ -84,17 +84,25 @@ export const createOrganization = async (
 export const getOrganizationById = async (id: string, includeMembers: boolean = false) => {
   try {
     return await Organization.findByPk(id, {
-      include: [
-        {
-          model: OrganizationMember,
-          attributes: includeMembers ? ['id', 'userId', 'role', 'status', 'joinedAt'] : [],
-          required: false,
-        },
-      ],
+      include: includeMembers
+        ? [
+            {
+              model: OrganizationMember,
+              attributes: ['id', 'userId', 'role', 'status', 'joinedAt'],
+              required: false,
+            },
+          ]
+        : [],
       attributes: {
-        include: [[sequelize.fn('COUNT', sequelize.col('OrganizationMembers.id')), 'memberCount']],
+        include: [
+          [
+            sequelize.literal(
+              '(SELECT COUNT(*) FROM OrganizationMembers WHERE OrganizationMembers.organizationId = Organization.id)'
+            ),
+            'memberCount',
+          ],
+        ],
       },
-      group: ['Organization.id'],
     });
   } catch (err) {
     console.error('Could not get organization:', err);
