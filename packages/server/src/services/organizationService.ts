@@ -9,6 +9,15 @@ interface CreateOrganizationData {
   websiteUrl?: string;
 }
 
+interface UpdateOrganizationData {
+  name?: string;
+  description?: string;
+  contactEmail?: string;
+  locationRegion?: string;
+  locationCity?: string;
+  websiteUrl?: string;
+}
+
 export const createOrganization = async (
   data: CreateOrganizationData,
   creatorUserId: string
@@ -76,6 +85,43 @@ export const getOrganizationById = async (id: string, includeMembers: boolean = 
     });
   } catch (err) {
     console.error('Could not get organization:', err);
+    throw err;
+  }
+};
+
+export const updateOrganization = async (
+  id: string,
+  data: UpdateOrganizationData
+): Promise<Organization> => {
+  try {
+    const organization = await Organization.findByPk(id);
+
+    if (!organization) {
+      const error: any = new Error('Could not find an organization with this ID');
+      error.status = 404;
+      throw error;
+    }
+
+    if (data.name && data.name.toLowerCase() !== organization.name.toLowerCase()) {
+      const existing = await Organization.findOne({
+        where: sequelize.where(
+          sequelize.fn('LOWER', sequelize.col('name')),
+          data.name.toLowerCase()
+        ),
+      });
+
+      if (existing) {
+        const error: any = new Error('An organization with this name already exists');
+        error.status = 409;
+        throw error;
+      }
+    }
+
+    await organization.update(data);
+
+    return organization;
+  } catch (err) {
+    console.error('Could not update organization:', err);
     throw err;
   }
 };
