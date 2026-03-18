@@ -12,7 +12,6 @@ export const loadUserOrganizations = async (
     return;
   }
   try {
-    //console.log(req.user);
     const memberships = await OrganizationMember.findAll({
       where: {
         userId: req.user.id,
@@ -22,7 +21,6 @@ export const loadUserOrganizations = async (
         model: Organization,
       },
     });
-    //console.log(memberships);
 
     req.userOrganizations = memberships.map((m: any) => m.Organization);
     next();
@@ -89,7 +87,6 @@ export const requireOrgAdmin = async (req: Request, res: Response, next: NextFun
   }
 
   const organizationId = req.params.organizationId as string;
-  //console.log(organizationId);
 
   if (!organizationId) {
     res.status(400).json({ error: true, message: 'Organization ID is required!' });
@@ -98,7 +95,6 @@ export const requireOrgAdmin = async (req: Request, res: Response, next: NextFun
 
   try {
     const membership = await getActiveMembership(req.user.id, organizationId);
-    //console.log(membership);
 
     if (!membership) {
       res.status(403).json({ error: true, message: 'You are not a member of this organziaton!' });
