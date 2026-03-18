@@ -1,4 +1,8 @@
+import { Op, WhereOptions } from 'sequelize';
+
 import { Organization, OrganizationMember, sequelize } from '../models';
+
+import { getPagination } from '../utils';
 
 interface CreateOrganizationData {
   name: string;
@@ -16,6 +20,18 @@ interface UpdateOrganizationData {
   locationRegion?: string;
   locationCity?: string;
   websiteUrl?: string;
+}
+
+interface SearchOrganizationsFilters {
+  region?: string;
+  city?: string;
+  status?: string;
+  search?: string;
+}
+
+interface pagination {
+  page?: number;
+  limit?: number;
 }
 
 export const createOrganization = async (
@@ -119,6 +135,51 @@ export const updateOrganization = async (
     return organization;
   } catch (err) {
     console.error('Could not update organization:', err);
+    throw err;
+  }
+};
+
+export const searchOrganizations = async (
+  filters: SearchOrganizationsFilters = {},
+  pagination: pagination = {}
+) => {
+  try {
+    const { limit, offset } = getPagination(pagination.page, pagination.limit);
+
+    const where: WhereOptions = {};
+
+    if (filters.region) {
+      where.locationRegion = filters.region;
+    }
+
+    if (filters.city) {
+      where.locationCity = filters.city;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.search) {
+      where.name = { [Op.like]: `%${filters.search}%` };
+    }
+
+    const { count, rows } = await Organization.findAndCountAll({
+      where,
+      offset,
+      limit,
+      order: [['createdAt', 'DESC']],
+    });
+
+    return {
+      organizations: rows,
+      total: count,
+      page: pagination.page || 1,
+      limit,
+      totalPages: Math.ceil(count / limit),
+    };
+  } catch (err) {
+    console.error('Could not get organizations:', err);
     throw err;
   }
 };
