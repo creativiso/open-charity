@@ -66,8 +66,9 @@ $radius-md: 0.75rem;
 $radius-lg: 1rem;
 $radius-full: 9.9rem;
 
-$media-max-width: 76.8rem;
-$media-min-width: 76.9rem;
+$media-max-width: 1024px;
+$media-min-width: 769px;
+$mobile-min-width-important: 1025px;
 
 $shadow-card:
   0 0.2rem 0.4rem rgba(0, 0, 0, 0.02),

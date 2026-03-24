@@ -22,8 +22,13 @@
   padding: 0 4rem;
 
   @media (max-width: $media-max-width) {
-    padding: 0 2rem;
+    grid-template-columns: 1fr auto auto; 
+    padding: 0 3rem;
+  }
+
+  @media (max-width: $media-min-width) {
     grid-template-columns: 1fr auto;
+    padding: 0 2rem;
   }
 }
 
@@ -111,6 +116,13 @@
   justify-self: end;
 
   @media (max-width: $media-max-width) {
+    grid-column: 2; 
+    grid-row: 1;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  @media (max-width: $media-min-width) {
     display: none;
   }
 
@@ -173,6 +185,13 @@
     &[aria-expanded='true'] {
       background: $green-hover-bg;
     }
+
+    @media (min-width: $media-min-width) and (max-width: $media-max-width) {
+        cursor:default;
+        &:hover {
+          background: inherit;
+        }
+    }
   }
 
   &-avatar {
@@ -222,6 +241,10 @@
 
     .header-user-button[aria-expanded='true'] & {
       transform: rotate(180deg);
+    }
+
+    @media (min-width: $media-min-width) and (max-width: $media-max-width) {
+        display: none;
     }
   }
 }
@@ -304,6 +327,10 @@
       }
     }
   }
+
+  @media (min-width: $media-min-width) and (max-width: $media-max-width) {
+      display: none;
+    }
 }
 
 // HAMBURGER
@@ -325,8 +352,12 @@
   flex-shrink: 0;
   z-index: 999;
 
-  @media (max-width: $media-max-width) {
+ @media (max-width: $media-max-width) {
     display: flex;
+    grid-column: 3; 
+    grid-row: 1;
+    justify-self: end;
+    margin-left: 1rem;
   }
 
   &-line {
@@ -374,12 +405,20 @@
   padding: 2rem 2rem 5rem;
   animation: slideDown 0.2s ease both;
 
-  &[hidden] {
-    display: none;
+  @media (min-width: $media-min-width) and (max-width: $media-max-width) {
+    left: auto; 
+    width: 35rem; 
+    border-left: 1px solid $border-warm;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+    right: 0;
   }
 
-  @media (min-width: $media-min-width) {
+  @media (min-width: $mobile-min-width-important) {
     display: none !important;
+  }
+
+  &[hidden] {
+    display: none;
   }
 
   &-close {
@@ -431,7 +470,6 @@
     }
 
     &--cta {
-      //width: 70%;
       color: $green-700;
       font-weight: $font-weight-bold;
 
@@ -465,22 +503,55 @@
         background: $green-700-hover;
         transform: none;
         color: $bg-card;
-        //box-shadow: $shadow-button-hover;
       }
     }
   }
 
+  &-submit-button {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      background: $green-700;
+      color: $bg-card;
+      border: none;
+      border-radius: $radius-sm;
+      padding: 1.4rem 2rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: $font-size-base;
+      font-weight: $font-weight-mid;
+      position: relative;
+      margin-top: 3.2rem;
+      margin-bottom: 2.4rem;
+      transition:  $transition-base;
+      overflow: hidden;
+      min-height: 4.8rem;
+
+      &:hover {
+        background: $green-700-hover;
+        transform: none;
+      }
+
+      @media (min-width: $media-min-width) and (max-width: $media-max-width) {
+        display: none;
+      }
+
+    }
+
   &-register-group {
     display: flex;
     flex-direction: column;
-    //align-items: center;
-    //align-self: flex-end;
-    // justify-content: space-between;
     transition: none;
   }
 
   &-account {
     margin-bottom: 1rem;
+
+    @media (min-width: $media-min-width) and (max-width: $media-max-width) {
+      display: none;
+    }
   }
 
   &-avatar {
@@ -502,6 +573,10 @@
       display: flex;
       align-items: center;
       gap: 1rem;
+
+      @media (min-width: $media-min-width) and (max-width: $media-max-width) {
+        display: none;
+      }
     }
 
     &-name {
