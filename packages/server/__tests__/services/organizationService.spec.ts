@@ -5,6 +5,7 @@ import {
   getOrganizationById,
   updateOrganization,
   searchOrganizations,
+  requestMembership,
 } from '../../src/services/organizationService';
 
 // Replace real models with fakes
@@ -17,6 +18,7 @@ jest.mock('../../src/models', () => ({
   },
   OrganizationMember: {
     create: jest.fn(),
+    findOne: jest.fn(),
   },
   sequelize: {
     where: jest.fn(),
@@ -224,5 +226,87 @@ describe('organizationService', () => {
       expect(result.total).toBe(0);
       expect(result.organizations).toHaveLength(0);
     });
+  });
+});
+
+// ─── requestMembership ──────────────────────────────────────────
+
+describe('requestMembership', () => {
+  const userId = 'user-uuid';
+  const organizationId = 'org-uuid';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should create a pending editor membership', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue({
+      ...mockOrganization,
+      status: 'Active',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(null);
+    (OrganizationMember.create as jest.Mock).mockResolvedValue({
+      userId,
+      organizationId,
+      role: 'editor',
+      status: 'Pending',
+    });
+
+    const result = await requestMembership(userId, organizationId);
+
+    expect(OrganizationMember.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId,
+        organizationId,
+        role: 'editor',
+        status: 'Pending',
+        joinedAt: expect.any(Date),
+      })
+    );
+    expect(result).toMatchObject({ role: 'editor', status: 'Pending' });
+  });
+
+  it('should throw 404 if organization not found', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(requestMembership(userId, organizationId)).rejects.toMatchObject({
+      message: 'Organization not found',
+      status: 404,
+    });
+
+    expect(OrganizationMember.create).not.toHaveBeenCalled();
+  });
+
+  it('should throw 400 if organization is not active', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue({
+      ...mockOrganization,
+      status: 'Pending',
+    });
+
+    await expect(requestMembership(userId, organizationId)).rejects.toMatchObject({
+      message: 'Organization is not active',
+      status: 400,
+    });
+
+    expect(OrganizationMember.create).not.toHaveBeenCalled();
+  });
+
+  it('should throw 409 if user is already a member', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue({
+      ...mockOrganization,
+      status: 'Active',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue({
+      userId,
+      organizationId,
+      status: 'Active',
+    });
+
+    await expect(requestMembership(userId, organizationId)).rejects.toMatchObject({
+      message: 'User is already a member of this organization or has a pending request',
+      status: 409,
+    });
+
+    expect(OrganizationMember.create).not.toHaveBeenCalled();
   });
 });

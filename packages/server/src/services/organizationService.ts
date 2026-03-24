@@ -183,7 +183,7 @@ export const requestMembership = async (
     }
 
     if (organization.status !== 'Active') {
-      const error: any = new Error('Organization not active');
+      const error: any = new Error('Organization is not active');
       error.status = 400;
       throw error;
     }
