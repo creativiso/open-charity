@@ -1,0 +1,129 @@
+<%
+  const csrf      = typeof csrfToken   !== 'undefined' ? csrfToken   : '';
+  const singleErr = typeof error       !== 'undefined' ? error       : null;
+  const errs      = typeof errors      !== 'undefined' && errors      ? errors      : [];
+  const fieldErrs = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
+  const form      = typeof formData    !== 'undefined' && formData    ? formData    : {};
+
+  const inv = (f) => fieldErrs[f] ? ' is-invalid' : '';
+%>
+
+<div class="container">
+
+    <div class="bg-circle bg-circle--1" aria-hidden="true"></div>
+    <div class="bg-circle bg-circle--2" aria-hidden="true"></div>
+    <div class="bg-circle bg-circle--3" aria-hidden="true"></div>
+    <div class="bg-circle bg-circle--4" aria-hidden="true"></div>
+    <div class="bg-circle bg-circle--5" aria-hidden="true"></div>
+    <div class="bg-circle bg-circle--6" aria-hidden="true"></div>
+    <div class="bg-circle bg-circle--7" aria-hidden="true"></div>
+    <div class="bg-circle bg-circle--8" aria-hidden="true"></div>
+    
+    <div class="card-container">
+
+        <div class="form-blob" aria-hidden="true">
+            <div class="circle circle--1"></div>
+            <div class="circle circle--2"></div>
+            <div class="circle circle--3"></div>
+            <div class="circle circle--4"></div>
+        </div>
+        
+        <div class="card-header">
+            <h3 class="card-header-title"><%= title %></h3>
+            <p class="card-header-subtitle">Добре дошли! Моля влезте, за да продължите</p>
+        </div>
+
+        <% if (typeof successMsg !== 'undefined' && successMsg) { %>
+            <div class="alert alert-success" role="alert" aria-live="polite">
+                <%= successMsg %>
+            </div>
+        <% } %>
+
+        <% if (singleErr) { %>
+            <div class="alert alert-error" role="alert" aria-live="polite">
+                <%= singleErr %>
+            </div>
+        <% } %>
+
+        <% if (errs.length) { %>
+            <div class="alert alert-error" role="alert" aria-live="assertive">
+                <strong>Моля поправете следните грешки:</strong>
+                <ul>
+                    <% errs.forEach(function(err) { %>
+                        <li><%= err.message %></li>
+                    <% }); %>
+                </ul>
+            </div>
+        <% } %>
+        
+        <div class="card-form-container">
+
+            <form action="/auth/login" method="POST" class="auth-form" novalidate aria-label="Форма за вход">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <input type="email" id="email" name="email"
+                            class="form-input<%= inv('email') %> email"
+                            placeholder=" "
+                            value="<%= form.email || '' %>"
+                            autocomplete="email" required
+                            aria-required="true"
+                            aria-describedby="email-error"
+                            aria-invalid="<%= fieldErrs.email ? 'true' : 'false' %>">
+                        <label for="email">Имейл адрес</label>
+                    </div>
+                    <div class="error-message email-error"
+                         role="alert"
+                         aria-live="polite">
+                        <% if (fieldErrs.email) { %><%= fieldErrs.email %><% } %>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password"
+                            class="form-input<%= inv('password') %> password"
+                            placeholder=" "
+                            autocomplete="current-password" required
+                            aria-required="true"
+                            aria-describedby="password-error"
+                            aria-invalid="<%= fieldErrs.password ? 'true' : 'false' %>">
+                            <label for="password">Парола</label>
+                        <button type="button" class="password-icon" data-target="password" aria-label="Покажи паролата"
+                                aria-pressed="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 2 16 16" aria-hidden="true" focusable="false">
+                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="error-message password-error"
+                         role="alert"
+                         aria-live="polite">
+                        <% if (fieldErrs.password) { %><%= fieldErrs.password %><% } %>
+                    </div>
+                </div>
+
+                <div class="form-password-info">
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="remember-me" name="rememberMe" value="1" aria-label="Запомни ме за следващото влизане">
+                        <label for="remember-me">Запомни ме</label>
+                    </div>
+                    <a href="/auth/forgot-password" class="form-forgot-password">Забравена парола?</a>
+                </div>
+                
+                <button type="submit" class="submit-button" aria-label="Влез в акаунта си">
+                    Влез
+                </button>
+
+                <p class="account">
+                    Нямате акаунт?
+                    <a href="/auth/register">Регистрирайте се</a>
+                </p>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/login.js"></script> 

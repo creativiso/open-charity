@@ -1,0 +1,126 @@
+<%
+  const user     = typeof currentUser !== 'undefined' ? currentUser : null;
+  const csrf     = typeof csrfToken   !== 'undefined' ? csrfToken   : '';
+  const active   = typeof activePage  !== 'undefined' ? activePage  : '';
+  const isActive = (key) => active === key ? ' active' : '';
+%>
+
+<header class="main-header" role="banner">
+  <div class="header-inner">
+
+    <a href="/" class="header-brand" aria-label="Open Charity home">
+      <div class="header-brand-icon" aria-hidden="true"></div>
+      <span class="header-brand-name">Open Charity</span>
+    </a>
+
+    <!-- Desktop -->
+    <nav class="header-nav" aria-label="Main navigation">
+      <a href="/campaigns" class="header-nav-link<%= isActive('campaigns') %>">Кампании</a>
+      <a href="/about"  class="header-nav-link<%= isActive('about') %>">За нас</a>
+    </nav>
+
+    <div class="header-actions">
+      <% if (user) { %>
+
+        <div class="header-user">
+          <button
+            type="button"
+            class="header-user-button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="headerUserDropdown"
+          >
+            <div class="header-user-avatar" aria-hidden="true">
+              <%- (user.name || 'U').charAt(0).toUpperCase() %>
+            </div>
+            <div class="header-user-info">
+              <span class="header-user-name" data-username="<%= user.name %>">
+                <%= user.name %>
+              </span>
+               <span class="header-user-email" data-email="<%= user.email %>">
+                <%= user.email %>
+              </span>
+            </div>
+            <svg class="header-user-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="4 6 8 10 12 6"/>
+            </svg>
+          </button>
+
+          <div class="header-dropdown" id="headerUserDropdown" role="menu" aria-labelledby="header-user-btn" hidden>
+            <div class="header-dropdown-header">
+              <span class="header-dropdown-name"><%= user.name %></span>
+              <span class="header-dropdown-email"><%= user.email %></span>
+            </div>
+
+            <a href="/profile"  class="header-dropdown-item" role="menuitem">Профил</a>
+            <a href="/settings" class="header-dropdown-item" role="menuitem">Настройки</a>
+
+            <form method="POST" action="/auth/logout" style="display:contents">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <button type="submit" class="header-dropdown-item header-dropdown-item--danger" role="menuitem">
+                Изход
+              </button>
+            </form>
+          </div>
+        </div>
+
+      <% } else { %>
+
+        <a href="/auth/login"    class="header-actions-login">Вход</a>
+        <a href="/auth/register" class="header-actions-register">Регистрация</a>
+
+      <% } %>
+    </div>
+
+    <!-- Hamburger -->
+    <button
+      type="button"
+      class="header-hamburger"
+      aria-label="Отвори падащото менюто"
+      aria-expanded="false"
+      aria-controls="headerMobileMenu"
+    >
+      <span class="header-hamburger-line"></span>
+      <span class="header-hamburger-line"></span>
+      <span class="header-hamburger-line"></span>
+    </button>
+
+  </div>
+
+  <!-- Mobile -->
+  <div class="header-mobile" hidden aria-label="Мобилно меню">
+    
+    <button type="button" class="header-mobile-close" aria-label="Затвори менюто"></button>
+
+    <div class="header-mobile-link-group">
+        <a href="/campaigns" class="header-mobile-link">Кампании</a>
+        <a href="/about" class="header-mobile-link">За нас</a>
+    </div>
+
+    <div class="header-mobile-register-group">
+      <% if (user) { %>
+        <div class="header-mobile-user-info">
+        <div class="header-mobile-avatar" aria-hidden="true">
+          <%- (user.name || 'U').charAt(0).toUpperCase() %>
+        </div>
+        <div class="header-mobile-user">
+            <span class="header-mobile-user-name"><%= user.name %></span>
+            <span class="header-mobile-user-email"><%= user.email %></span>
+        </div>
+      </div>
+        <form method="POST" action="/auth/logout">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <button type="submit" class="header-mobile-link header-mobile-link--danger">Изход</button>
+        </form>
+      <% } else { %>
+        <a href="/auth/register" class="header-mobile-link header-mobile-link--cta submit-button">Регистрация</a>
+        <p class="account header-mobile-account">
+          Вече имате акаунт?
+          <a href="/auth/login">Влезте тук</a>
+        </p>
+      </div>
+      <% } %>
+    </div>
+</header>
+
+<script src="/js/header.js"></script>
