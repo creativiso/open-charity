@@ -168,3 +168,47 @@ export const searchOrganizations = async (
     throw err;
   }
 };
+
+export const requestMembership = async (
+  userId: string,
+  organizationId: string
+): Promise<OrganizationMember> => {
+  try {
+    const organization = await Organization.findByPk(organizationId);
+
+    if (!organization) {
+      const error: any = new Error('Organization not found');
+      error.status = 404;
+      throw error;
+    }
+
+    if (organization.status !== 'Active') {
+      const error: any = new Error('Organization not active');
+      error.status = 400;
+      throw error;
+    }
+
+    const existingMembership = await OrganizationMember.findOne({
+      where: { userId, organizationId, status: ['Pending', 'Active'] },
+    });
+
+    if (existingMembership) {
+      const error: any = new Error(
+        'User is already a member of this organization or has a pending request'
+      );
+      error.status = 409;
+      throw error;
+    }
+
+    return await OrganizationMember.create({
+      userId,
+      organizationId,
+      role: 'editor',
+      status: 'Pending',
+      joinedAt: new Date(),
+    });
+  } catch (err) {
+    console.error('Could not request membership:', err);
+    throw err;
+  }
+};
