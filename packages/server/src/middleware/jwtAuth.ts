@@ -27,7 +27,6 @@ export const verifyToken = async (
   next: NextFunction
 ): Promise<void> => {
   const authHeader = req.headers['authorization'];
-  //console.log(authHeader);
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ error: true, message: 'No token provided' });
@@ -35,7 +34,6 @@ export const verifyToken = async (
   }
 
   const token = authHeader.split(' ')[1];
-  //console.log(token);
 
   if (!token) {
     res.status(401).json({ message: 'Token required for access!' });
@@ -44,7 +42,6 @@ export const verifyToken = async (
 
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET!);
-    //console.log(decoded);
 
     const user = await User.findByPk((decoded as TokenPayload).id);
 
