@@ -1,27 +1,64 @@
 @use 'variables' as *;
 
 %flex-shared {
-    display: flex;
-    flex-direction: row;
+  display: flex;
+  flex-direction: row;
 }
 
 %align-shared {
-    justify-content: center;
-    align-items: center;
+  justify-content: center;
+  align-items: center;
 }
-
-// LAYOUT 
 
 .container {
   @extend %flex-shared;
   @extend %align-shared;
-  padding: 1.6rem 0 3rem 0;
+  padding: 1.6rem 0 6rem 0;
   margin-bottom: 9.8rem;
   position: relative;
   overflow: hidden;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -20;
+  }
+
+  &::before {
+    top: 0;
+    left: 0;
+
+    box-shadow:
+
+      $first-circle,
+      $second-circle,
+      $third-circle,
+      $fourth-circle;
+
+    animation: first-float-variation 7s ease-in-out infinite alternate;
+  }
+
+  &::after {
+    top: 0;
+    right: 0;
+
+    box-shadow:
+
+      $fifth-circle,
+      $sixth-circle,
+      $seventh-circle,
+      $eight-circle;
+
+    animation: third-float-variation 5s ease-in-out infinite alternate;
+  }
 }
 
-// CARD 
+// CARD
 
 .card-container {
   width: 100%;
@@ -34,10 +71,66 @@
   position: relative;
   overflow: hidden;
   z-index: 0;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    z-index: -1;
+  }
+
+  &::before {
+    width: 13rem;
+    height: 13rem;
+    background: $green-700;
+    top: -5rem;
+    right: -3rem;
+    opacity: 0.9;
+    animation: first-float-variation 4s ease-in-out infinite;
+  }
+
+  &::after {
+    width: 7.5rem;
+    height: 7.5rem;
+    background: $green-400;
+    top: -1rem;
+    right: 3.5rem;
+    opacity: 0.65;
+    animation: second-float-variation 3.5s ease-in-out infinite 0.4s;
+  }
 }
 
 .card-header {
   margin-bottom: 3.2rem;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    z-index: -1;
+  }
+
+  &::before {
+    width: 5.5rem;
+    height: 5.5rem;
+    background: $green-200;
+    top: 3.5rem;
+    right: -0.5rem;
+    opacity: 0.45;
+    animation: third-float-variation 5s ease-in-out infinite 0.8s;
+  }
+
+  &::after {
+    width: 3rem;
+    height: 3rem;
+    background: $green-300;
+    top: 0.5rem;
+    right: 6.5rem;
+    opacity: 0.35;
+    animation: first-float-variation 3s ease-in-out infinite 1.2s;
+  }
 
   &-title {
     color: $text-dark;
@@ -54,7 +147,7 @@
   }
 }
 
-// FORM 
+// FORM
 
 .input-group {
   position: relative;
@@ -69,7 +162,7 @@
     font-size: $font-size-base;
     font-weight: $font-weight-normal;
     pointer-events: none;
-    transition:  $transition-base;
+    transition: $transition-base;
     background: $bg-card;
     padding: 0 0.8rem;
     line-height: 1;
@@ -89,7 +182,7 @@
     color: $text-label;
   }
 
-  .form-input[aria-invalid="true"] {
+  .form-input[aria-invalid='true'] {
     border-color: $color-error;
 
     & + label {
@@ -134,7 +227,7 @@
   font-size: $font-size-base;
   font-weight: $font-weight-normal;
   outline: none;
-  transition:  $transition-base;
+  transition: $transition-base;
   font-family: inherit;
 
   &::placeholder {
@@ -162,8 +255,7 @@
   }
 }
 
-
-// PASSWORD ICON 
+// PASSWORD ICON
 
 .password-icon {
   @extend %flex-shared;
@@ -179,7 +271,7 @@
   padding: 0;
   width: 2.4rem;
   height: 2.4rem;
-  transition:  $transition-base;
+  transition: $transition-base;
   z-index: 2;
 
   &:focus-visible {
@@ -229,7 +321,7 @@
 
   &.strength-1 {
     width: 25%;
-    background: $color-error ;
+    background: $color-error;
   }
   &.strength-2 {
     width: 50%;
@@ -264,8 +356,7 @@
   }
 }
 
-
-// FORM ELEMENTS 
+// FORM ELEMENTS
 
 .form-password-info {
   @extend %flex-shared;
@@ -278,7 +369,7 @@
   @extend %flex-shared;
   gap: 5px;
 
-  input[type="checkbox"]:focus-visible {
+  input[type='checkbox']:focus-visible {
     outline: 1px solid $green-700;
     border-radius: 4px;
   }
@@ -286,7 +377,7 @@
 
 .form-forgot-password {
   color: $green-700;
-  transition:  $transition-base;
+  transition: $transition-base;
 
   &:hover {
     color: $green-700-hover;
@@ -315,7 +406,7 @@
   position: relative;
   margin-top: 3.2rem;
   margin-bottom: 2.4rem;
-  transition:  $transition-base;
+  transition: $transition-base;
   overflow: hidden;
   min-height: 4.8rem;
 
@@ -349,153 +440,7 @@
   display: none;
 }
 
-// CIRCLES
-
-.form-blob {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 16rem;
-  height: 16rem;
-  pointer-events: none;
-  z-index: 0;
-  overflow: visible;
-}
-
-.circle {
-  position: absolute;
-  border-radius: 50%;
-
-  &--1 {
-    width: 13rem;
-    height: 13rem;
-    background: $green-700;
-    top: -5rem;
-    right: -3rem;
-    opacity: 0.9;
-    animation: float-a 4s ease-in-out infinite;
-  }
-
-  &--2 {
-    width: 7.5rem;
-    height: 7.5rem;
-    background: $green-400;
-    top: -1rem;
-    right: 3.5rem;
-    opacity: 0.65;
-    animation: float-b 3.5s ease-in-out infinite 0.4s;
-  }
-
-  &--3 {
-    width: 5.5rem;
-    height: 5.5rem;
-    background: $green-200;
-    top: 3.5rem;
-    right: -0.5rem;
-    opacity: 0.45;
-    animation: float-c 5s ease-in-out infinite 0.8s;
-  }
-
-  &--4 {
-    width: 3rem;
-    height: 3rem;
-    background: $green-300;
-    top: 0.5rem;
-    right: 6.5rem;
-    opacity: 0.35;
-    animation: float-a 3s ease-in-out infinite 1.2s;
-  }
-}
-
-.bg-circle {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-
-  &--1 {
-    width: 16rem;
-    height: 16rem;
-    background: $green-700;
-    opacity: 0.06;
-    top: -6rem;
-    left: -4rem;
-    animation: float-a 7s ease-in-out infinite;
-  }
-
-  &--2 {
-    width: 5rem;
-    height: 5rem;
-    background: $green-400;
-    opacity: 0.1;
-    top: 35%;
-    left: 6%;
-    animation: float-c 5s ease-in-out infinite 0.8s;
-  }
-
-  &--3 {
-    width: 9rem;
-    height: 9rem;
-    background: $green-200;
-    opacity: 0.08;
-    bottom: -2rem;
-    left: 8%;
-    animation: float-b 6s ease-in-out infinite 1.2s;
-  }
-
-  &--4 {
-    width: 3.5rem;
-    height: 3.5rem;
-    background: $green-300;
-    opacity: 0.12;
-    top: 8%;
-    left: 28%;
-    animation: float-a 4s ease-in-out infinite 0.5s;
-  }
-
-  &--5 {
-    width: 14rem;
-    height: 14rem;
-    background: $green-700;
-    opacity: 0.05;
-    top: -5rem;
-    right: -3rem;
-    animation: float-b 8s ease-in-out infinite 0.3s;
-  }
-
-  &--6 {
-    width: 7rem;
-    height: 7rem;
-    background: $green-400;
-    opacity: 0.08;
-    top: 40%;
-    right: 5%;
-    animation: float-c 6.5s ease-in-out infinite 1s;
-  }
-
-  &--7 {
-    width: 4.5rem;
-    height: 4.5rem;
-    background: $green-200;
-    opacity: 0.11;
-    bottom: 6%;
-    right: 12%;
-    animation: float-a 5s ease-in-out infinite 1.8s;
-  }
-
-  &--8 {
-    width: 8rem;
-    height: 8rem;
-    background: $green-500;
-    opacity: 0.06;
-    bottom: -3rem;
-    right: 30%;
-    animation: float-b 7s ease-in-out infinite 0.6s;
-  }
-}
-
-
-// ALERTS 
+// ALERTS
 
 .alert-success {
   background: $green-100;
@@ -508,35 +453,34 @@
   line-height: 1.5;
 }
 
+// KEYFRAMES
 
-// KEYFRAMES 
-
-@keyframes float-a {
+@keyframes first-float-variation {
   0%,
   100% {
     transform: translate(0, 0);
   }
   50% {
-    transform: translate(-10px, 10px);
+    transform: translate(-1rem, 1rem);
   }
 }
 
-@keyframes float-b {
+@keyframes second-float-variation {
   0%,
   100% {
     transform: translate(0, 0);
   }
   50% {
-    transform: translate(10px, -10px);
+    transform: translate(1rem, -1rem);
   }
 }
 
-@keyframes float-c {
+@keyframes third-float-variation {
   0%,
   100% {
     transform: translate(0, 0);
   }
   50% {
-    transform: translate(-6px, -12px);
+    transform: translate(-0.6rem, -1.2rem);
   }
 }

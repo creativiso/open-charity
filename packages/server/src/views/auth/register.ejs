@@ -7,157 +7,142 @@
   const inv = (f) => fieldErrs[f] ? ' is-invalid' : '';
 %>
 
-<div class="container" role="main">
-    <div class="bg-circle bg-circle--1" aria-hidden="true"></div>
-    <div class="bg-circle bg-circle--2" aria-hidden="true"></div>
-    <div class="bg-circle bg-circle--3" aria-hidden="true"></div>
-    <div class="bg-circle bg-circle--4" aria-hidden="true"></div>
-    <div class="bg-circle bg-circle--5" aria-hidden="true"></div>
-    <div class="bg-circle bg-circle--6" aria-hidden="true"></div>
-    <div class="bg-circle bg-circle--7" aria-hidden="true"></div>
-    <div class="bg-circle bg-circle--8" aria-hidden="true"></div>
+    <div class="container" role="main">
 
-    <div class="card-container">
-
-         <div class="form-blob" aria-hidden="true">
-            <div class="circle circle--1"></div>
-            <div class="circle circle--2"></div>
-            <div class="circle circle--3"></div>
-            <div class="circle circle--4"></div>
-        </div>
-        
-        <div class="card-header">
-            <h3 class="card-header-title"><%= title %></h3>
-            <p class="card-header-subtitle">Попълнете формата, за да се регистрирате</p>
-        </div>
-
-        <% if (errs.length) { %>
-            <div class="alert alert-error" role="alert" aria-live="assertive">
-                <strong>Моля, поправете следните грешки: </strong>
-                <ul>
-                    <% errs.forEach(function(err) { %>
-                        <li><%= err.message %></li>
-                    <% }); %>
-                </ul>
-            </div>
-        <% } %>
-        
-        <div class="card-form-container">
-
-            <form action="/auth/register" method="POST" class="auth-form" novalidate aria-label="Форма за регистрация">
-                <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <div class="card-container">
             
-                <div class="input-group">
-                    <div class="input-wrapper">
-                        <input type="text" id="name" name="name"
-                            class="form-input<%= inv('name') %> name"
-                            placeholder=" "
-                            value="<%= form.name || '' %>"
-                            autocomplete="name" required
-                            aria-required="true"
-                            aria-describedby="name-error"
-                            aria-invalid="<%= fieldErrs.name ? 'true' : 'false' %>">
-                        <label for="name">Име</label>
-                    </div>
-                    <div class="error-message name-error" 
-                        id="name-error"
-                         role="alert"
-                         aria-live="polite">
-                        <% if (fieldErrs.name) { %>
-                            <%= fieldErrs.name %>
-                        <% } %>
-                    </div>
+            <div class="card-header">
+                <h3 class="card-header-title"><%= title %></h3>
+                <p class="card-header-subtitle">Попълнете формата, за да се регистрирате</p>
+            </div>
+
+            <% if (errs.length) { %>
+                <div class="alert alert-error" role="alert" aria-live="assertive">
+                    <strong>Моля, поправете следните грешки: </strong>
+                    <ul>
+                        <% errs.forEach(function(err) { %>
+                            <li><%= err.message %></li>
+                        <% }); %>
+                    </ul>
                 </div>
+            <% } %>
+            
+            <div class="card-form-container">
 
-                <div class="input-group">
-                    <div class="input-wrapper">
-                        <input type="email" id="email" name="email"
-                            class="form-input<%= inv('email') %> email"
-                            placeholder=" "
-                            value="<%= form.email || '' %>"
-                            required
-                            aria-required="true"
-                            aria-describedby="email-error"
-                            aria-invalid="<%= fieldErrs.email ? 'true' : 'false' %>">
-                        <label for="email">Имейл адрес</label>
-                    </div>
-                    <div class="error-message email-error" 
-                        id="email-error"
-                         role="alert"
-                         aria-live="polite">
-                        <% if (fieldErrs.email) { %><%= fieldErrs.email %><% } %>
-                    </div>
-                </div>
-
-                <div class="input-group has-icon">
-                    <div class="input-wrapper">
-                        <input type="password" id="password" name="password"
-                            class="form-input<%= inv('password') %> password"
-                            placeholder=" "
-                            required
-                            aria-required="true"
-                            aria-describedby="password-error password-strength-label"
-                            aria-invalid="<%= fieldErrs.password ? 'true' : 'false' %>">
-                        <label for="password">Парола</label>
-                        <button type="button" class="password-icon" data-target="password" aria-label="Покажи паролата" aria-pressed="false">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 2 16 16" aria-hidden="true" focusable="false">
-                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="password-strength" aria-hidden="true">
-                        <div class="strength-bar-track">
-                            <div class="strength-bar-fill"></div>
+                <form action="/auth/register" method="POST" class="auth-form" novalidate aria-label="Форма за регистрация">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <input type="text" id="name" name="name"
+                                class="form-input<%= inv('name') %> name"
+                                placeholder=" "
+                                value="<%= form.name || '' %>"
+                                autocomplete="name" required
+                                aria-required="true"
+                                aria-describedby="name-error"
+                                aria-invalid="<%= fieldErrs.name ? 'true' : 'false' %>">
+                            <label for="name">Име</label>
                         </div>
-                        <span class="strength-label"></span>
+                        <div class="error-message name-error" 
+                            id="name-error"
+                            role="alert"
+                            aria-live="polite">
+                            <% if (fieldErrs.name) { %>
+                                <%= fieldErrs.name %>
+                            <% } %>
+                        </div>
                     </div>
 
-                    <!-- Screen reader strength announcement -->
-                    <span id="password-strength-label" class="sr-only" aria-live="polite"></span>
-
-                    <div class="error-message password-error" id="password-error"
-                         role="alert"
-                         aria-live="polite">
-                        <% if (fieldErrs.password) { %><%= fieldErrs.password %><% } %>
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <input type="email" id="email" name="email"
+                                class="form-input<%= inv('email') %> email"
+                                placeholder=" "
+                                value="<%= form.email || '' %>"
+                                required
+                                aria-required="true"
+                                aria-describedby="email-error"
+                                aria-invalid="<%= fieldErrs.email ? 'true' : 'false' %>">
+                            <label for="email">Имейл адрес</label>
+                        </div>
+                        <div class="error-message email-error" 
+                            id="email-error"
+                            role="alert"
+                            aria-live="polite">
+                            <% if (fieldErrs.email) { %><%= fieldErrs.email %><% } %>
+                        </div>
                     </div>
-                </div>
 
-                <div class="input-group">
-                    <div class="input-wrapper">
-                        <input type="password" id="confirmPassword" name="confirmPassword"
-                            class="form-input confirm-password"
-                            placeholder=" "
-                            autocomplete="current-password" required
-                            aria-required="true"
-                            aria-describedby="confirm-password-error">
-                        <label for="confirmPassword">Потвърдете паролата</label>
-                        <button type="button" class="password-icon" data-target="confirmPassword" aria-label="Покажи потвърждението на паролата"
-                                aria-pressed="false">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 2 16 16" aria-hidden="true" focusable="false">
-                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="error-message confirm-password-error" role="alert"
-                         aria-live="polite">
-                        <% if (fieldErrs.password) { %><%= fieldErrs.password %><% } %>
-                    </div>
-                </div>
-                                
-                <button type="submit" class="submit-button" aria-label="Регистрирай акаунт">
-                    Регистрация
-                </button>
+                    <div class="input-group has-icon">
+                        <div class="input-wrapper">
+                            <input type="password" id="password" name="password"
+                                class="form-input<%= inv('password') %> password"
+                                placeholder=" "
+                                required
+                                aria-required="true"
+                                aria-describedby="password-error password-strength-label"
+                                aria-invalid="<%= fieldErrs.password ? 'true' : 'false' %>">
+                            <label for="password">Парола</label>
+                            <button type="button" class="password-icon" data-target="password" aria-label="Покажи паролата" aria-pressed="false">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 2 16 16" aria-hidden="true" focusable="false">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                </svg>
+                            </button>
+                        </div>
 
-                <p class="account">
-                    Вече имате акаунт?
-                    <a href="/auth/login">Влезте тук</a>
-                </p>
-            </form>
+                        <div class="password-strength" aria-hidden="true">
+                            <div class="strength-bar-track">
+                                <div class="strength-bar-fill"></div>
+                            </div>
+                            <span class="strength-label"></span>
+                        </div>
+
+                        <!-- Screen reader strength announcement -->
+                        <span id="password-strength-label" class="sr-only" aria-live="polite"></span>
+
+                        <div class="error-message password-error" id="password-error"
+                            role="alert"
+                            aria-live="polite">
+                            <% if (fieldErrs.password) { %><%= fieldErrs.password %><% } %>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <input type="password" id="confirmPassword" name="confirmPassword"
+                                class="form-input confirm-password"
+                                placeholder=" "
+                                autocomplete="current-password" required
+                                aria-required="true"
+                                aria-describedby="confirm-password-error">
+                            <label for="confirmPassword">Потвърдете паролата</label>
+                            <button type="button" class="password-icon" data-target="confirmPassword" aria-label="Покажи потвърждението на паролата"
+                                    aria-pressed="false">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 2 16 16" aria-hidden="true" focusable="false">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="error-message confirm-password-error" role="alert"
+                            aria-live="polite">
+                            <% if (fieldErrs.password) { %><%= fieldErrs.password %><% } %>
+                        </div>
+                    </div>
+                                    
+                    <button type="submit" class="submit-button" aria-label="Регистрирай акаунт">
+                        Регистрация
+                    </button>
+
+                    <p class="account">
+                        Вече имате акаунт?
+                        <a href="/auth/login">Влезте тук</a>
+                    </p>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
 <script src="/js/register.js"></script> 
