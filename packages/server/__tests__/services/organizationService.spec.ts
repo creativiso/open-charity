@@ -6,6 +6,7 @@ import {
   updateOrganization,
   searchOrganizations,
   requestMembership,
+  approveMembership,
 } from '../../src/services/organizationService';
 
 // Replace real models with fakes
@@ -19,6 +20,7 @@ jest.mock('../../src/models', () => ({
   OrganizationMember: {
     create: jest.fn(),
     findOne: jest.fn(),
+    findByPk: jest.fn(),
   },
   sequelize: {
     where: jest.fn(),
@@ -308,5 +310,71 @@ describe('requestMembership', () => {
     });
 
     expect(OrganizationMember.create).not.toHaveBeenCalled();
+  });
+});
+
+// ─── approveMembership ──────────────────────────────────────────
+
+describe('approveMembership', () => {
+  const membershipId = 'membership-uuid';
+  const approverUserId = 'approver-uuid';
+
+  const mockMembership = {
+    id: membershipId,
+    status: 'Pending',
+    userId: 'user-uuid',
+    organizationId: 'org-uuid',
+    update: jest.fn().mockImplementation((data: any) => {
+      Object.assign(mockMembership, data);
+      return Promise.resolve(mockMembership);
+    }),
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should approve a pending membership successfully', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({ ...mockMembership });
+
+    const result = await approveMembership(membershipId, approverUserId);
+
+    expect(OrganizationMember.findByPk).toHaveBeenCalledWith(membershipId);
+    expect(result.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'Active', joinedAt: expect.any(Date) })
+    );
+  });
+
+  it('should throw 404 if membership does not exist', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(approveMembership(membershipId, approverUserId)).rejects.toMatchObject({
+      message: 'Membership request not found',
+      status: 404,
+    });
+  });
+
+  it('should throw 400 if membership is not in Pending status', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      status: 'Active',
+    });
+
+    await expect(approveMembership(membershipId, approverUserId)).rejects.toMatchObject({
+      message: 'Membership is not in a pending state',
+      status: 400,
+    });
+  });
+
+  it('should throw 403 if the approver is the same as the member (self-approval check)', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      userId: approverUserId,
+    });
+
+    await expect(approveMembership(membershipId, approverUserId)).rejects.toMatchObject({
+      message: 'Users cannot approve their own membership requests',
+      status: 403,
+    });
   });
 });

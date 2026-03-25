@@ -212,3 +212,42 @@ export const requestMembership = async (
     throw err;
   }
 };
+
+export const approveMembership = async (
+  membershipId: string,
+  approverUserId: string
+): Promise<any> => {
+  try {
+    const membership = await OrganizationMember.findByPk(membershipId);
+
+    if (!membership) {
+      const error: any = new Error('Membership request not found');
+      error.status = 404;
+      throw error;
+    }
+
+    if (membership.userId == approverUserId) {
+      const error: any = new Error('Users cannot approve their own membership requests');
+      error.status = 403;
+      throw error;
+    }
+
+    if (membership.status !== 'Pending') {
+      const error: any = new Error('Membership is not in a pending state');
+      error.status = 400;
+      throw error;
+    }
+
+    await membership.update({
+      status: 'Active',
+      joinedAt: new Date(),
+    });
+
+    console.log('Membership approved');
+
+    return membership;
+  } catch (err) {
+    console.error('Could not approve membership:', err);
+    throw err;
+  }
+};
