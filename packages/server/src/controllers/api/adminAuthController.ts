@@ -56,8 +56,6 @@ adminAuthController.post(
   }
 );
 
-export default adminAuthController;
-
 adminAuthController.get('/me', verifyToken, requireAdminJWT, (req: Request, res: Response) => {
   const user = req.user!;
 
@@ -65,3 +63,5 @@ adminAuthController.get('/me', verifyToken, requireAdminJWT, (req: Request, res:
     user: user.toJSON(),
   });
 });
+
+export default adminAuthController;
