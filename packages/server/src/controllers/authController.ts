@@ -6,6 +6,15 @@ import { Organization, OrganizationMember, User } from '../models';
 
 const authController: Router = Router();
 
+authController.get('/register', (req: Request, res: Response) => {
+  res.render('auth/register', {
+    title: 'Създайте акаунт',
+    errors: [],
+    fieldErrors: {},
+    formData: {},
+  });
+});
+
 authController.post(
   '/register',
   registerValidation,
@@ -23,18 +32,24 @@ authController.post(
         role: 'user',
       });
 
-      req.session.userId = user.id;
-
-      res.status(201).json({
-        message: 'User registered successfully',
-        user: user.toJSON(),
-      });
+      res.redirect('/auth/login?registered=true');
     } catch (err) {
       console.error('Registration error:', err);
       res.status(500).json({ error: true, message: 'Registration failed' });
     }
   }
 );
+
+authController.get('/login', (req: Request, res: Response) => {
+  res.render('auth/login', {
+    title: 'Влезте в акунта си',
+    error: null,
+    errors: [],
+    fieldErrors: {},
+    formData: {},
+    successMsg: req.query.registered ? 'Акаунтът е създаден успешно! Моля влезте.' : null,
+  });
+});
 
 authController.post(
   '/login',
@@ -64,15 +79,16 @@ authController.post(
         req.session.userId = user.id;
 
         req.session.save((saveErr) => {
-          if (saveErr) {
-            res.status(500).json({ error: true, message: 'Login failed' });
-            return;
-          }
+          if (saveErr)
+            return res.status(500).render('auth/login', {
+              title: 'Влезте в акунта си',
+              error: 'Login failed. Please try again.',
+              errors: [],
+              fieldErrors: {},
+              formData: { email },
+            });
 
-          res.status(200).json({
-            message: 'User logged in successfully',
-            user: user.toJSON(),
-          });
+          res.redirect('/');
         });
       });
     } catch (err) {
@@ -90,7 +106,8 @@ authController.post('/logout', (req: Request, res: Response) => {
     }
 
     res.clearCookie('connect.sid');
-    res.status(200).json({ message: 'Logout successful' });
+    res.redirect('/');
+    //res.status(200).json({ message: 'Logout successfully' });
   });
 });
 

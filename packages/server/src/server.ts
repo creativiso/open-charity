@@ -11,6 +11,7 @@ import helmet from 'helmet';
 import path from 'path';
 
 import healthRoutes from './routes/healthRoutes';
+import authController from './controllers/authController';
 
 import router from './router';
 
@@ -18,6 +19,7 @@ import './models/index';
 import sequelize from './config/database';
 
 import env from '../../../config/env-validator';
+import { User } from './models/index';
 
 const app: Application = express();
 
@@ -37,11 +39,11 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.set('views', path.join(__dirname, '../views'));
+app.set('views', path.join(__dirname, 'views'));
 
 app.set('view engine', 'ejs');
 
@@ -62,6 +64,23 @@ app.use(
   })
 );
 
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  if (req.session.userId) {
+    try {
+      const user = await User.findByPk(req.session.userId, {
+        attributes: ['id', 'name', 'email', 'role'],
+      });
+      res.locals.currentUser = user || null;
+    } catch (err) {
+      res.locals.currentUser = null;
+    }
+  } else {
+    res.locals.currentUser = null;
+  }
+  next();
+});
+
+app.use('/auth', authController);
 app.use(router);
 app.use('/api', healthRoutes);
 
