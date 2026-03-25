@@ -11,6 +11,7 @@ class OrganizationMember extends Model {
   declare userId: string;
   declare role: 'admin' | 'editor';
   declare status: 'Pending' | 'Active' | 'Rejected';
+  declare rejectionReason: string | null;
   declare joinedAt: Date;
 
   declare readonly createdAt: Date;
@@ -47,6 +48,10 @@ OrganizationMember.init(
     status: {
       type: DataTypes.ENUM('Pending', 'Active', 'Rejected'),
       defaultValue: 'Pending',
+    },
+    rejectionReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     joinedAt: {
       type: DataTypes.DATE,

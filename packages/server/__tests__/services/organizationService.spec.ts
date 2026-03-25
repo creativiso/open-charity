@@ -7,6 +7,7 @@ import {
   searchOrganizations,
   requestMembership,
   approveMembership,
+  rejectMembership,
 } from '../../src/services/organizationService';
 
 // Replace real models with fakes
@@ -43,6 +44,20 @@ const mockOrganization = {
   locationCity: 'Sofia',
   status: 'Pending',
   update: jest.fn(),
+};
+
+const membershipId = 'membership-uuid';
+const approverUserId = 'approver-uuid';
+
+const mockMembership: any = {
+  id: 'membership-uuid',
+  status: 'Pending',
+  userId: 'user-uuid',
+  organizationId: 'org-uuid',
+  update: jest.fn().mockImplementation((data: any) => {
+    Object.assign(mockMembership, data);
+    return Promise.resolve(mockMembership);
+  }),
 };
 
 describe('organizationService', () => {
@@ -316,22 +331,10 @@ describe('requestMembership', () => {
 // ─── approveMembership ──────────────────────────────────────────
 
 describe('approveMembership', () => {
-  const membershipId = 'membership-uuid';
-  const approverUserId = 'approver-uuid';
-
-  const mockMembership = {
-    id: membershipId,
-    status: 'Pending',
-    userId: 'user-uuid',
-    organizationId: 'org-uuid',
-    update: jest.fn().mockImplementation((data: any) => {
-      Object.assign(mockMembership, data);
-      return Promise.resolve(mockMembership);
-    }),
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
+    mockMembership.status = 'Pending';
+    mockMembership.userId = 'user-uuid';
   });
 
   it('should approve a pending membership successfully', async () => {
@@ -376,5 +379,71 @@ describe('approveMembership', () => {
       message: 'Users cannot approve their own membership requests',
       status: 403,
     });
+  });
+});
+
+// ─── rejectMembership ──────────────────────────────────────────
+
+describe('rejectMembership', () => {
+  const reason = 'Does not meet organization requirements';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMembership.status = 'Pending';
+    mockMembership.userId = 'user-uuid';
+  });
+
+  it('should reject a pending membership with a reason', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+
+    const result = await rejectMembership(membershipId, approverUserId, reason);
+
+    expect(OrganizationMember.findByPk).toHaveBeenCalledWith(membershipId);
+    expect(result.update).toHaveBeenCalledTimes(1);
+    expect(result.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'Rejected',
+        rejectionReason: reason,
+      })
+    );
+  });
+
+  it('should throw 404 if membership does not exist', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(rejectMembership(membershipId, approverUserId, reason)).rejects.toMatchObject({
+      message: 'Membership request not found',
+      status: 404,
+    });
+
+    expect(OrganizationMember.findByPk).toHaveBeenCalledWith(membershipId);
+  });
+
+  it('should throw 400 if membership is not in Pending status', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      status: 'Active',
+    });
+
+    await expect(rejectMembership(membershipId, approverUserId, reason)).rejects.toMatchObject({
+      message: 'Membership is not in a pending state',
+      status: 400,
+    });
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 403 if approver is the same as the member', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      userId: approverUserId,
+    });
+
+    await expect(rejectMembership(membershipId, approverUserId, reason)).rejects.toMatchObject({
+      message: 'Users cannot reject their own membership requests',
+      status: 403,
+    });
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
   });
 });

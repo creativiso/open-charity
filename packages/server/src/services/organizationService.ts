@@ -216,7 +216,7 @@ export const requestMembership = async (
 export const approveMembership = async (
   membershipId: string,
   approverUserId: string
-): Promise<any> => {
+): Promise<OrganizationMember> => {
   try {
     const membership = await OrganizationMember.findByPk(membershipId);
 
@@ -248,6 +248,44 @@ export const approveMembership = async (
     return membership;
   } catch (err) {
     console.error('Could not approve membership:', err);
+    throw err;
+  }
+};
+
+export const rejectMembership = async (
+  membershipId: string,
+  approverUserId: string,
+  reason: string
+): Promise<OrganizationMember> => {
+  try {
+    const membership = await OrganizationMember.findByPk(membershipId);
+
+    if (!membership) {
+      const error: any = new Error('Membership request not found');
+      error.status = 404;
+      throw error;
+    }
+
+    if (membership.userId == approverUserId) {
+      const error: any = new Error('Users cannot reject their own membership requests');
+      error.status = 403;
+      throw error;
+    }
+
+    if (membership.status !== 'Pending') {
+      const error: any = new Error('Membership is not in a pending state');
+      error.status = 400;
+      throw error;
+    }
+
+    await membership.update({
+      status: 'Rejected',
+      rejectionReason: reason,
+    });
+
+    return membership;
+  } catch (err) {
+    console.error('Could not reject membership:', err);
     throw err;
   }
 };
