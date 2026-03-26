@@ -226,7 +226,7 @@ export const approveMembership = async (
       throw error;
     }
 
-    if (membership.userId == approverUserId) {
+    if (membership.userId === approverUserId) {
       const error: any = new Error('Users cannot approve their own membership requests');
       error.status = 403;
       throw error;
@@ -266,7 +266,7 @@ export const rejectMembership = async (
       throw error;
     }
 
-    if (membership.userId == approverUserId) {
+    if (membership.userId === approverUserId) {
       const error: any = new Error('Users cannot reject their own membership requests');
       error.status = 403;
       throw error;
@@ -286,6 +286,66 @@ export const rejectMembership = async (
     return membership;
   } catch (err) {
     console.error('Could not reject membership:', err);
+    throw err;
+  }
+};
+
+export const updateMemberRole = async (
+  membershipId: string,
+  newRole: string,
+  adminUserId: string
+): Promise<OrganizationMember> => {
+  try {
+    const membership = await OrganizationMember.findByPk(membershipId);
+
+    if (!membership) {
+      const error: any = new Error('Membership not found');
+      error.status = 404;
+      throw error;
+    }
+
+    const adminMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: membership.organizationId,
+        userId: adminUserId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (!adminMembership) {
+      const error: any = new Error('You do not have admin permission in this organization');
+      error.status = 403;
+      throw error;
+    }
+
+    if (!['admin', 'editor'].includes(newRole)) {
+      const error: any = new Error('Invalid role, must be admin or editor');
+      error.status = 400;
+      throw error;
+    }
+
+    if (membership.role === 'admin' && newRole === 'editor') {
+      const adminCount = await OrganizationMember.count({
+        where: {
+          organizationId: membership.organizationId,
+          role: 'admin',
+          status: 'Active',
+        },
+      });
+
+      if (adminCount <= 1) {
+        const error: any = new Error('Cannot remove the last admin of the organization');
+        error.status = 400;
+        throw error;
+      }
+    }
+
+    await membership.update({ role: newRole });
+
+    return membership;
+  } catch (err) {
+    console.error('Could not update member role:', err);
     throw err;
   }
 };

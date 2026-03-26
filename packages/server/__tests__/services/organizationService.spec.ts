@@ -8,6 +8,7 @@ import {
   requestMembership,
   approveMembership,
   rejectMembership,
+  updateMemberRole,
 } from '../../src/services/organizationService';
 
 // Replace real models with fakes
@@ -22,6 +23,7 @@ jest.mock('../../src/models', () => ({
     create: jest.fn(),
     findOne: jest.fn(),
     findByPk: jest.fn(),
+    count: jest.fn(),
   },
   sequelize: {
     where: jest.fn(),
@@ -58,6 +60,13 @@ const mockMembership: any = {
     Object.assign(mockMembership, data);
     return Promise.resolve(mockMembership);
   }),
+};
+
+const mockAdminMembership = {
+  userId: approverUserId,
+  organizationId: 'org-uuid',
+  role: 'admin',
+  status: 'Active',
 };
 
 describe('organizationService', () => {
@@ -442,6 +451,92 @@ describe('rejectMembership', () => {
     await expect(rejectMembership(membershipId, approverUserId, reason)).rejects.toMatchObject({
       message: 'Users cannot reject their own membership requests',
       status: 403,
+    });
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─── updateMemberRole ───────────────────────────────────────────
+
+describe('updateMemberRole', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMembership.status = 'Active';
+    mockMembership.userId = 'user-uuid';
+    mockMembership.role = 'editor';
+  });
+
+  it('should update member role from editor to admin', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+
+    const result = await updateMemberRole(membershipId, 'admin', approverUserId);
+
+    expect(result.update).toHaveBeenCalledWith({ role: 'admin' });
+  });
+
+  it('should update member role from admin to editor when not last admin', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      role: 'admin',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+    (OrganizationMember.count as jest.Mock).mockResolvedValue(2);
+
+    const result = await updateMemberRole(membershipId, 'editor', approverUserId);
+
+    expect(result.update).toHaveBeenCalledWith({ role: 'editor' });
+  });
+
+  it('should throw 404 if membership not found', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(updateMemberRole(membershipId, 'admin', approverUserId)).rejects.toMatchObject({
+      message: 'Membership not found',
+      status: 404,
+    });
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 403 if the caller is not an admin of the organization', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(null); // no admin membership found
+
+    await expect(updateMemberRole(membershipId, 'editor', approverUserId)).rejects.toMatchObject({
+      message: 'You do not have admin permission in this organization',
+      status: 403,
+    });
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 400 if trying to remove the last admin', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      role: 'admin',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+    (OrganizationMember.count as jest.Mock).mockResolvedValue(1); // only 1 admin
+
+    await expect(updateMemberRole(membershipId, 'editor', approverUserId)).rejects.toMatchObject({
+      message: 'Cannot remove the last admin of the organization',
+      status: 400,
+    });
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 400 if new role is invalid', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+
+    await expect(
+      updateMemberRole(membershipId, 'superadmin' as any, approverUserId)
+    ).rejects.toMatchObject({
+      message: 'Invalid role, must be admin or editor',
+      status: 400,
     });
 
     expect(mockMembership.update).not.toHaveBeenCalled();
