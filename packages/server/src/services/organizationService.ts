@@ -11,6 +11,8 @@ import {
 import { getPagination } from '../utils';
 import { Pagination } from '../types/pagination.types';
 
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
+
 export const createOrganization = async (
   data: CreateOrganizationData,
   creatorUserId: string
@@ -23,15 +25,11 @@ export const createOrganization = async (
     });
 
     if (existing) {
-      const error: any = new Error('An organization with this name already exists');
-      error.status = 409;
-      throw error;
+      throw new ConflictError('An organization with this name already exists');
     }
 
     if (!emailRegex.test(data.contactEmail)) {
-      const error: any = new Error('Invalid contact email format');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Invalid contact email format');
     }
 
     const organization = await Organization.create({ ...data, status: 'Pending' });
@@ -95,9 +93,7 @@ export const updateOrganization = async (
     const organization = await Organization.findByPk(id);
 
     if (!organization) {
-      const error: any = new Error('Could not find an organization with this ID');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Could not find an organization with this ID');
     }
 
     if (data.name && data.name.toLowerCase() !== organization.name.toLowerCase()) {
@@ -109,9 +105,7 @@ export const updateOrganization = async (
       });
 
       if (existing) {
-        const error: any = new Error('An organization with this name already exists');
-        error.status = 409;
-        throw error;
+        throw new ConflictError('An organization with this name already exists');
       }
     }
 
@@ -177,15 +171,11 @@ export const requestMembership = async (
     const organization = await Organization.findByPk(organizationId);
 
     if (!organization) {
-      const error: any = new Error('Organization not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Organization not found');
     }
 
     if (organization.status !== 'Active') {
-      const error: any = new Error('Organization is not active');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Organization is not active');
     }
 
     const existingMembership = await OrganizationMember.findOne({
@@ -193,11 +183,9 @@ export const requestMembership = async (
     });
 
     if (existingMembership) {
-      const error: any = new Error(
+      throw new ConflictError(
         'User is already a member of this organization or has a pending request'
       );
-      error.status = 409;
-      throw error;
     }
 
     return await OrganizationMember.create({
@@ -221,21 +209,15 @@ export const approveMembership = async (
     const membership = await OrganizationMember.findByPk(membershipId);
 
     if (!membership) {
-      const error: any = new Error('Membership request not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Membership request not found');
     }
 
     if (membership.userId === approverUserId) {
-      const error: any = new Error('Users cannot approve their own membership requests');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('Users cannot approve their own membership requests');
     }
 
     if (membership.status !== 'Pending') {
-      const error: any = new Error('Membership is not in a pending state');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Membership is not in a pending state');
     }
 
     await membership.update({
@@ -261,21 +243,15 @@ export const rejectMembership = async (
     const membership = await OrganizationMember.findByPk(membershipId);
 
     if (!membership) {
-      const error: any = new Error('Membership request not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Membership request not found');
     }
 
     if (membership.userId === approverUserId) {
-      const error: any = new Error('Users cannot reject their own membership requests');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('Users cannot reject their own membership requests');
     }
 
     if (membership.status !== 'Pending') {
-      const error: any = new Error('Membership is not in a pending state');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Membership is not in a pending state');
     }
 
     await membership.update({
@@ -299,9 +275,7 @@ export const updateMemberRole = async (
     const membership = await OrganizationMember.findByPk(membershipId);
 
     if (!membership) {
-      const error: any = new Error('Membership not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Membership request not found');
     }
 
     const adminMembership = await OrganizationMember.findOne({
@@ -314,15 +288,11 @@ export const updateMemberRole = async (
     });
 
     if (!adminMembership) {
-      const error: any = new Error('You do not have admin permission in this organization');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('You do not have admin permission in this organization');
     }
 
     if (!['admin', 'editor'].includes(newRole)) {
-      const error: any = new Error('Invalid role, must be admin or editor');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Invalid role, must be admin or editor');
     }
 
     if (membership.role === 'admin' && newRole === 'editor') {
@@ -335,9 +305,7 @@ export const updateMemberRole = async (
       });
 
       if (adminCount <= 1) {
-        const error: any = new Error('Cannot remove the last admin of the organization');
-        error.status = 400;
-        throw error;
+        throw new ValidationError('Cannot remove the last admin of the organization');
       }
     }
 
@@ -358,9 +326,7 @@ export const removeMember = async (
     const membership = await OrganizationMember.findByPk(membershipId);
 
     if (!membership) {
-      const error: any = new Error('Membership not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Membership request not found');
     }
 
     const adminMembership = await OrganizationMember.findOne({
@@ -373,15 +339,11 @@ export const removeMember = async (
     });
 
     if (!adminMembership) {
-      const error: any = new Error('You do not have admin permission in this organization');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('You do not have admin permission in this organization');
     }
 
     if (adminUserId === membership.userId) {
-      const error: any = new Error('Admins cannot remove themselves');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('Admins cannot remove themselves');
     }
 
     const adminCount = await OrganizationMember.count({
@@ -393,9 +355,7 @@ export const removeMember = async (
     });
 
     if (adminCount <= 1) {
-      const error: any = new Error('Cannot remove the last admin of the organization');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Cannot remove the last admin of the organization');
     }
 
     await membership.update({ status: 'Removed' });
