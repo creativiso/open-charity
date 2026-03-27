@@ -11,7 +11,6 @@ import { Organization, OrganizationMember, sequelize, User } from '../models';
 
 import { getPagination } from '../utils';
 import { Pagination } from '../types/pagination.types';
-import { fileURLToPath } from 'url';
 
 export const createOrganization = async (
   data: CreateOrganizationData,
@@ -171,81 +170,6 @@ export const searchOrganizations = async (
   }
 };
 
-//like approve membership
-// Implement approveOrganization(orgId, adminUserId):
-// Validate organization is Pending
-// Update status to 'Active'
-// Auto-approve creator's membership
-// Return updated organization
-
-//like reject membership
-// Implement rejectOrganization(orgId, adminUserId, reason):
-// Update status to 'Rejected'
-// Store rejection reason
-// Reject all pending memberships
-
-// export const rejectOrganization = async (
-//   orgId: string,
-//   adminUserId: string,
-//   reason: string
-// ): Promise<Organization> => {
-//   try {
-//     const organization = await Organization.findByPk(orgId);
-
-//     if (!organization) {
-//       const error: any = new Error('Could not find an organization with this ID');
-//       error.status = 404;
-//       throw error;
-//     }
-
-//     if (organization.status !== 'Pending') {
-//       const error: any = new Error('Only pending organizations can be rejected');
-//       error.status = 400;
-//       throw error;
-//     }
-
-//     // --- USE adminUserId HERE ---
-//     // Check if the user performing the rejection is an active Admin
-//     const adminMembership = await OrganizationMember.findOne({
-//       where: {
-//         userId: adminUserId,
-//         role: 'admin',
-//         status: 'Active'
-//       }
-//     });
-
-//     if (!adminMembership) {
-//       const error: any = new Error('Unauthorized to reject this organization');
-//       error.status = 403;
-//       throw error;
-//     }
-
-//     // 1. Update Organization
-//     await organization.update({
-//       status: 'Rejected',
-//       rejectionReason: reason // Make sure this is in your model!
-//     });
-
-//     // 2. Update Memberships
-//     await OrganizationMember.update(
-//       { status: 'Rejected' },
-//       {
-//         where: { organizationId: orgId, status: 'Pending' }
-//       }
-//     );
-
-//     return organization;
-//   } catch (error) {
-//     console.error('Could not reject organization: ', error);
-//     throw error;
-//   }
-// };
-
-// Implement getOrganizationMembers(orgId, filters):
-// Load members with user info
-// Filter by role, status
-// Return members list
-
 export const getOrganizationMembers = async (
   orgId: string,
   filters: MembersFilters = {}
@@ -284,38 +208,3 @@ export const getOrganizationMembers = async (
     throw error;
   }
 };
-
-// export const getOrganizationMembers = async (
-//   orgId: string,
-//   filters: any = {}
-// ) => {
-//   try {
-//     const whereClause: any = { organizationId: orgId };
-
-//     if (filters.role)
-//     {
-//       whereClause.role = filters.role;
-//     }
-
-//     if (filters.status)
-//     {
-//       whereClause.status = filters.status;
-//     }
-
-//     const members = await OrganizationMember.findAll({
-//       where: whereClause,
-//       include: [
-//         {
-//           model: User,
-//           attributes: ['id', 'firstName', 'lastName', 'email'],
-//         },
-//       ],
-//       order: [['createdAt', 'ASC']],
-//     });
-
-//     return members;
-//   } catch (error) {
-//     console.error('Could not fetch organization members: ', error);
-//     throw error;
-//   }
-// };
