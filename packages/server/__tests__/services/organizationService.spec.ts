@@ -7,6 +7,7 @@ import {
   searchOrganizations,
   getOrganizationMembers,
   approveOrganization,
+  rejectOrganization,
 } from '../../src/services/organizationService';
 
 // Replace real models with fakes
@@ -21,6 +22,7 @@ jest.mock('../../src/models', () => ({
     findAll: jest.fn(),
     findOne: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
   },
   User: {
     findByPk: jest.fn(),
@@ -47,6 +49,52 @@ const mockOrganization = {
   status: 'Pending',
   update: jest.fn(),
 };
+
+const mockAdminUser = {
+  id: 'admin-uuid',
+  name: 'admin',
+  email: 'admin@admin.com',
+  role: 'admin',
+};
+
+const mockMembers = [
+  {
+    id: 'member-1-uuid',
+    userId: 'user-1-uuid',
+    role: 'admin',
+    status: 'Active',
+    User: {
+      id: 'user-1-uuid',
+      firstName: 'Elena',
+      lastName: 'Stoeva',
+      email: 'elena@example.com',
+    },
+  },
+  {
+    id: 'member-2-uuid',
+    userId: 'user-2-uuid',
+    role: 'editor',
+    status: 'Active',
+    User: {
+      id: 'user-2-uuid',
+      firstName: 'Nikol',
+      lastName: 'Ivanova',
+      email: 'nikol@example.com',
+    },
+  },
+  {
+    id: 'member-3-uuid',
+    userId: 'user-3-uuid',
+    role: 'editor',
+    status: 'Pending',
+    User: {
+      id: 'user-3-uuid',
+      firstName: 'Stoyan',
+      lastName: 'Kolev',
+      email: 'stoyan@example.com',
+    },
+  },
+];
 
 describe('organizationService', () => {
   beforeEach(() => {
@@ -240,13 +288,6 @@ describe('approveOrganization', () => {
   const orgId = 'org-uuid';
   const adminUserId = 'admin-uuid';
 
-  const mockAdminUser = {
-    id: adminUserId,
-    name: 'admin',
-    email: 'admin@admin.com',
-    role: 'admin',
-  };
-
   const mockCreatorMembership = {
     id: 'membership-uuid',
     organizationId: orgId,
@@ -339,49 +380,110 @@ describe('approveOrganization', () => {
   });
 });
 
+// reject organization
+
+describe('rejectOrganization', () => {
+  const orgId = 'org-uuid';
+  const adminUserId = 'admin-uuid';
+
+  const reason = 'Reason for rejection description';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockOrganization.status = 'Pending';
+    mockOrganization.update.mockResolvedValue(mockOrganization);
+  });
+
+  it('should reject a pending organization and reject all pending memberships', async () => {
+    (User.findByPk as jest.Mock).mockResolvedValue(mockAdminUser);
+    (Organization.findByPk as jest.Mock).mockResolvedValue(mockOrganization);
+    (OrganizationMember.update as jest.Mock).mockResolvedValue([2]);
+
+    const result = await rejectOrganization(orgId, adminUserId, reason);
+
+    expect(mockOrganization.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'Rejected', rejectionReason: reason })
+    );
+
+    expect(OrganizationMember.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'Rejected', rejectionReason: reason }),
+      expect.objectContaining({
+        where: expect.objectContaining({ organizationId: orgId, status: 'Pending' }),
+      })
+    );
+    expect(result).toEqual(mockOrganization);
+  });
+
+  it('should still succeed when there are no pending memberships to reject', async () => {
+    (User.findByPk as jest.Mock).mockResolvedValue(mockAdminUser);
+    (Organization.findByPk as jest.Mock).mockResolvedValue(mockOrganization);
+    (OrganizationMember.update as jest.Mock).mockResolvedValue([0]);
+
+    const result = await rejectOrganization(orgId, adminUserId, reason);
+
+    expect(result).toEqual(mockOrganization);
+    expect(OrganizationMember.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw 404 if admin user does not exist', async () => {
+    (User.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(rejectOrganization(orgId, 'not-admin-uuid', reason)).rejects.toMatchObject({
+      message: 'Admin user not found',
+      status: 404,
+    });
+
+    expect(Organization.findByPk).not.toHaveBeenCalled();
+  });
+
+  it('should throw 403 if user does not have admin role', async () => {
+    (User.findByPk as jest.Mock).mockResolvedValue({
+      ...mockAdminUser,
+      id: 'other-user',
+      role: 'user',
+    });
+
+    await expect(rejectOrganization(orgId, 'other-user', reason)).rejects.toMatchObject({
+      message: 'You do not have permission to perform this action',
+      status: 403,
+    });
+
+    expect(Organization.findByPk).not.toHaveBeenCalled();
+    expect(mockOrganization.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 404 if organization does not exist', async () => {
+    (User.findByPk as jest.Mock).mockResolvedValue(mockAdminUser);
+    (Organization.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(rejectOrganization(orgId, adminUserId, reason)).rejects.toMatchObject({
+      message: 'Organization not found',
+      status: 404,
+    });
+
+    expect(OrganizationMember.findAll).not.toHaveBeenCalled();
+  });
+
+  it('should throw 400 if organization does not have Pending status', async () => {
+    (User.findByPk as jest.Mock).mockResolvedValue(mockAdminUser);
+    (Organization.findByPk as jest.Mock).mockResolvedValue({
+      ...mockOrganization,
+      status: 'Active',
+    });
+
+    await expect(rejectOrganization(orgId, adminUserId, reason)).rejects.toMatchObject({
+      message: 'Only pending organizations can be rejected',
+      status: 400,
+    });
+
+    expect(mockOrganization.update).not.toHaveBeenCalled();
+  });
+});
+
 // get organization members
 
 describe('getOrganizationMembers', () => {
   const orgId = 'org-uuid';
-
-  const mockMembers = [
-    {
-      id: 'member-1-uuid',
-      userId: 'user-1-uuid',
-      role: 'admin',
-      status: 'Active',
-      User: {
-        id: 'user-1-uuid',
-        firstName: 'Elena',
-        lastName: 'Stoeva',
-        email: 'elena@example.com',
-      },
-    },
-    {
-      id: 'member-2-uuid',
-      userId: 'user-2-uuid',
-      role: 'editor',
-      status: 'Active',
-      User: {
-        id: 'user-2-uuid',
-        firstName: 'Nikol',
-        lastName: 'Ivanova',
-        email: 'nikol@example.com',
-      },
-    },
-    {
-      id: 'member-3-uuid',
-      userId: 'user-3-uuid',
-      role: 'editor',
-      status: 'Pending',
-      User: {
-        id: 'user-3-uuid',
-        firstName: 'Stoyan',
-        lastName: 'Kolev',
-        email: 'stoyan@example.com',
-      },
-    },
-  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
