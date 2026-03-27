@@ -12,6 +12,8 @@ import { Organization, OrganizationMember, sequelize, User } from '../models';
 import { getPagination } from '../utils';
 import { Pagination } from '../types/pagination.types';
 
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
+
 export const createOrganization = async (
   data: CreateOrganizationData,
   creatorUserId: string
@@ -24,15 +26,11 @@ export const createOrganization = async (
     });
 
     if (existing) {
-      const error: any = new Error('An organization with this name already exists');
-      error.status = 409;
-      throw error;
+      throw new ConflictError('An organization with this name already exists');
     }
 
     if (!emailRegex.test(data.contactEmail)) {
-      const error: any = new Error('Invalid contact email format');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Invalid contact email format');
     }
 
     const organization = await Organization.create({ ...data, status: 'Pending' });
@@ -96,9 +94,7 @@ export const updateOrganization = async (
     const organization = await Organization.findByPk(id);
 
     if (!organization) {
-      const error: any = new Error('Could not find an organization with this ID');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Could not find an organization with this ID');
     }
 
     if (data.name && data.name.toLowerCase() !== organization.name.toLowerCase()) {
@@ -110,9 +106,7 @@ export const updateOrganization = async (
       });
 
       if (existing) {
-        const error: any = new Error('An organization with this name already exists');
-        error.status = 409;
-        throw error;
+        throw new ConflictError('An organization with this name already exists');
       }
     }
 
@@ -170,6 +164,209 @@ export const searchOrganizations = async (
   }
 };
 
+export const requestMembership = async (
+  userId: string,
+  organizationId: string
+): Promise<OrganizationMember> => {
+  try {
+    const organization = await Organization.findByPk(organizationId);
+
+    if (!organization) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    if (organization.status !== 'Active') {
+      throw new ValidationError('Organization is not active');
+    }
+
+    const existingMembership = await OrganizationMember.findOne({
+      where: { userId, organizationId, status: ['Pending', 'Active'] },
+    });
+
+    if (existingMembership) {
+      throw new ConflictError(
+        'User is already a member of this organization or has a pending request'
+      );
+    }
+
+    return await OrganizationMember.create({
+      userId,
+      organizationId,
+      role: 'editor',
+      status: 'Pending',
+      joinedAt: new Date(),
+    });
+  } catch (err) {
+    console.error('Could not request membership:', err);
+    throw err;
+  }
+};
+
+export const approveMembership = async (
+  membershipId: string,
+  approverUserId: string
+): Promise<OrganizationMember> => {
+  try {
+    const membership = await OrganizationMember.findByPk(membershipId);
+
+    if (!membership) {
+      throw new NotFoundError('Membership request not found');
+    }
+
+    if (membership.userId === approverUserId) {
+      throw new ForbiddenError('Users cannot approve their own membership requests');
+    }
+
+    if (membership.status !== 'Pending') {
+      throw new ValidationError('Membership is not in a pending state');
+    }
+
+    await membership.update({
+      status: 'Active',
+      joinedAt: new Date(),
+    });
+
+    console.log('Membership approved');
+
+    return membership;
+  } catch (err) {
+    console.error('Could not approve membership:', err);
+    throw err;
+  }
+};
+
+export const rejectMembership = async (
+  membershipId: string,
+  approverUserId: string,
+  reason: string
+): Promise<OrganizationMember> => {
+  try {
+    const membership = await OrganizationMember.findByPk(membershipId);
+
+    if (!membership) {
+      throw new NotFoundError('Membership request not found');
+    }
+
+    if (membership.userId === approverUserId) {
+      throw new ForbiddenError('Users cannot reject their own membership requests');
+    }
+
+    if (membership.status !== 'Pending') {
+      throw new ValidationError('Membership is not in a pending state');
+    }
+
+    await membership.update({
+      status: 'Rejected',
+      rejectionReason: reason,
+    });
+
+    return membership;
+  } catch (err) {
+    console.error('Could not reject membership:', err);
+    throw err;
+  }
+};
+
+export const updateMemberRole = async (
+  membershipId: string,
+  newRole: string,
+  adminUserId: string
+): Promise<OrganizationMember> => {
+  try {
+    const membership = await OrganizationMember.findByPk(membershipId);
+
+    if (!membership) {
+      throw new NotFoundError('Membership request not found');
+    }
+
+    const adminMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: membership.organizationId,
+        userId: adminUserId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permission in this organization');
+    }
+
+    if (!['admin', 'editor'].includes(newRole)) {
+      throw new ValidationError('Invalid role, must be admin or editor');
+    }
+
+    if (membership.role === 'admin' && newRole === 'editor') {
+      const adminCount = await OrganizationMember.count({
+        where: {
+          organizationId: membership.organizationId,
+          role: 'admin',
+          status: 'Active',
+        },
+      });
+
+      if (adminCount <= 1) {
+        throw new ValidationError('Cannot remove the last admin of the organization');
+      }
+    }
+
+    await membership.update({ role: newRole });
+
+    return membership;
+  } catch (err) {
+    console.error('Could not update member role:', err);
+    throw err;
+  }
+};
+
+export const removeMember = async (
+  membershipId: string,
+  adminUserId: string
+): Promise<OrganizationMember> => {
+  try {
+    const membership = await OrganizationMember.findByPk(membershipId);
+
+    if (!membership) {
+      throw new NotFoundError('Membership request not found');
+    }
+
+    const adminMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: membership.organizationId,
+        userId: adminUserId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permission in this organization');
+    }
+
+    if (adminUserId === membership.userId) {
+      throw new ForbiddenError('Admins cannot remove themselves');
+    }
+
+    const adminCount = await OrganizationMember.count({
+      where: {
+        organizationId: membership.organizationId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (adminCount <= 1) {
+      throw new ValidationError('Cannot remove the last admin of the organization');
+    }
+
+    await membership.update({ status: 'Removed' });
+    return membership;
+  } catch (err) {
+    console.error('Could not remove member:', err);
+    throw err;
+  }
+};
+
 export const approveOrganization = async (
   orgId: string,
   adminUserId: string
@@ -178,29 +375,21 @@ export const approveOrganization = async (
     const adminUser = await User.findByPk(adminUserId);
 
     if (!adminUser) {
-      const error: any = new Error('Admin User not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Admin User not found');
     }
 
     if (adminUser.role !== 'admin') {
-      const error: any = new Error('You do not have permission to perform this action');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('You do not have permission to perform this action');
     }
 
     const organization = await Organization.findByPk(orgId);
 
     if (!organization) {
-      const error: any = new Error('Organization not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Organization not found');
     }
 
     if (organization.status !== 'Pending') {
-      const error: any = new Error('Only pending organizations can be approved');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Only pending organizations can be approved');
     }
 
     await organization.update({ status: 'Active' });
@@ -241,29 +430,21 @@ export const rejectOrganization = async (orgId: string, adminUserId: string, rea
     const adminUser = await User.findByPk(adminUserId);
 
     if (!adminUser) {
-      const error: any = new Error('Admin user not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Admin user not found');
     }
 
     if (adminUser.role !== 'admin') {
-      const error: any = new Error('You do not have permission to perform this action');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('You do not have permission to perform this action');
     }
 
     const organization = await Organization.findByPk(orgId);
 
     if (!organization) {
-      const error: any = new Error('Organization not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Organization not found');
     }
 
     if (organization.status !== 'Pending') {
-      const error: any = new Error('Only pending organizations can be rejected');
-      error.status = 400;
-      throw error;
+      throw new ValidationError('Only pending organizations can be rejected');
     }
 
     await organization.update({ status: 'Rejected', rejectionReason: reason });
@@ -296,9 +477,7 @@ export const getOrganizationMembers = async (
     const organization = await Organization.findByPk(orgId);
 
     if (!organization) {
-      const error: any = new Error('Organization not found');
-      error.status = 404;
-      throw error;
+      throw new NotFoundError('Organization not found');
     }
 
     const where: WhereOptions = { organizationId: orgId };

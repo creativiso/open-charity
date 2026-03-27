@@ -1,3 +1,5 @@
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../src/errors';
+
 import { Organization, OrganizationMember, sequelize, User } from '../../src/models';
 
 import {
@@ -5,6 +7,11 @@ import {
   getOrganizationById,
   updateOrganization,
   searchOrganizations,
+  requestMembership,
+  approveMembership,
+  rejectMembership,
+  updateMemberRole,
+  removeMember,
   getOrganizationMembers,
   approveOrganization,
   rejectOrganization,
@@ -22,6 +29,8 @@ jest.mock('../../src/models', () => ({
     findAll: jest.fn(),
     findOne: jest.fn(),
     create: jest.fn(),
+    findByPk: jest.fn(),
+    count: jest.fn(),
     update: jest.fn(),
   },
   User: {
@@ -48,6 +57,27 @@ const mockOrganization = {
   locationCity: 'Sofia',
   status: 'Pending',
   update: jest.fn(),
+};
+
+const membershipId = 'membership-uuid';
+const approverUserId = 'approver-uuid';
+
+const mockMembership: any = {
+  id: 'membership-uuid',
+  status: 'Pending',
+  userId: 'user-uuid',
+  organizationId: 'org-uuid',
+  update: jest.fn().mockImplementation((data: any) => {
+    Object.assign(mockMembership, data);
+    return Promise.resolve(mockMembership);
+  }),
+};
+
+const mockAdminMembership = {
+  userId: approverUserId,
+  organizationId: 'org-uuid',
+  role: 'admin',
+  status: 'Active',
 };
 
 const mockAdminUser = {
@@ -135,10 +165,7 @@ describe('organizationService', () => {
     it('should throw 409 if organization name already exists', async () => {
       (Organization.findOne as jest.Mock).mockResolvedValue(mockOrganization); // duplicate found
 
-      await expect(createOrganization(createData, 'user-uuid')).rejects.toMatchObject({
-        message: 'An organization with this name already exists',
-        status: 409,
-      });
+      await expect(createOrganization(createData, 'user-uuid')).rejects.toThrow(ConflictError);
 
       expect(Organization.create).not.toHaveBeenCalled();
     });
@@ -148,10 +175,7 @@ describe('organizationService', () => {
 
       await expect(
         createOrganization({ ...createData, contactEmail: 'not-an-email' }, 'user-uuid')
-      ).rejects.toMatchObject({
-        message: 'Invalid contact email format',
-        status: 400,
-      });
+      ).rejects.toThrow(ValidationError);
 
       expect(Organization.create).not.toHaveBeenCalled();
     });
@@ -214,20 +238,18 @@ describe('organizationService', () => {
     it('should throw 404 if organization not found', async () => {
       (Organization.findByPk as jest.Mock).mockResolvedValue(null);
 
-      await expect(updateOrganization('bad-uuid', { name: 'New Name' })).rejects.toMatchObject({
-        message: 'Could not find an organization with this ID',
-        status: 404,
-      });
+      await expect(updateOrganization('bad-uuid', { name: 'New Name' })).rejects.toThrow(
+        NotFoundError
+      );
     });
 
     it('should throw 409 if new name already taken', async () => {
       (Organization.findByPk as jest.Mock).mockResolvedValue(mockOrganization);
       (Organization.findOne as jest.Mock).mockResolvedValue({ id: 'other-org', name: 'New Name' });
 
-      await expect(updateOrganization('org-uuid', { name: 'New Name' })).rejects.toMatchObject({
-        message: 'An organization with this name already exists',
-        status: 409,
-      });
+      await expect(updateOrganization('org-uuid', { name: 'New Name' })).rejects.toThrow(
+        ConflictError
+      );
     });
 
     it('should skip name uniqueness check if name is unchanged', async () => {
@@ -282,6 +304,323 @@ describe('organizationService', () => {
   });
 });
 
+// ─── requestMembership ──────────────────────────────────────────
+
+describe('requestMembership', () => {
+  const userId = 'user-uuid';
+  const organizationId = 'org-uuid';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should create a pending editor membership', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue({
+      ...mockOrganization,
+      status: 'Active',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(null);
+    (OrganizationMember.create as jest.Mock).mockResolvedValue({
+      userId,
+      organizationId,
+      role: 'editor',
+      status: 'Pending',
+    });
+
+    const result = await requestMembership(userId, organizationId);
+
+    expect(OrganizationMember.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId,
+        organizationId,
+        role: 'editor',
+        status: 'Pending',
+        joinedAt: expect.any(Date),
+      })
+    );
+    expect(result).toMatchObject({ role: 'editor', status: 'Pending' });
+  });
+
+  it('should throw 404 if organization not found', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(requestMembership(userId, organizationId)).rejects.toThrow(NotFoundError);
+
+    expect(OrganizationMember.create).not.toHaveBeenCalled();
+  });
+
+  it('should throw 400 if organization is not active', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue({
+      ...mockOrganization,
+      status: 'Pending',
+    });
+
+    await expect(requestMembership(userId, organizationId)).rejects.toThrow(ValidationError);
+
+    expect(OrganizationMember.create).not.toHaveBeenCalled();
+  });
+
+  it('should throw 409 if user is already a member', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue({
+      ...mockOrganization,
+      status: 'Active',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue({
+      userId,
+      organizationId,
+      status: 'Active',
+    });
+
+    await expect(requestMembership(userId, organizationId)).rejects.toThrow(ConflictError);
+
+    expect(OrganizationMember.create).not.toHaveBeenCalled();
+  });
+});
+
+// ─── approveMembership ──────────────────────────────────────────
+
+describe('approveMembership', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMembership.status = 'Pending';
+    mockMembership.userId = 'user-uuid';
+  });
+
+  it('should approve a pending membership successfully', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({ ...mockMembership });
+
+    const result = await approveMembership(membershipId, approverUserId);
+
+    expect(OrganizationMember.findByPk).toHaveBeenCalledWith(membershipId);
+    expect(result.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'Active', joinedAt: expect.any(Date) })
+    );
+  });
+
+  it('should throw 404 if membership does not exist', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(approveMembership(membershipId, approverUserId)).rejects.toThrow(NotFoundError);
+  });
+
+  it('should throw 400 if membership is not in Pending status', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      status: 'Active',
+    });
+
+    await expect(approveMembership(membershipId, approverUserId)).rejects.toThrow(ValidationError);
+  });
+
+  it('should throw 403 if the approver is the same as the member (self-approval check)', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      userId: approverUserId,
+    });
+
+    await expect(approveMembership(membershipId, approverUserId)).rejects.toThrow(ForbiddenError);
+  });
+});
+
+// ─── rejectMembership ──────────────────────────────────────────
+
+describe('rejectMembership', () => {
+  const reason = 'Does not meet organization requirements';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMembership.status = 'Pending';
+    mockMembership.userId = 'user-uuid';
+  });
+
+  it('should reject a pending membership with a reason', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+
+    const result = await rejectMembership(membershipId, approverUserId, reason);
+
+    expect(OrganizationMember.findByPk).toHaveBeenCalledWith(membershipId);
+    expect(result.update).toHaveBeenCalledTimes(1);
+    expect(result.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'Rejected',
+        rejectionReason: reason,
+      })
+    );
+  });
+
+  it('should throw 404 if membership does not exist', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(rejectMembership(membershipId, approverUserId, reason)).rejects.toThrow(
+      NotFoundError
+    );
+    expect(OrganizationMember.findByPk).toHaveBeenCalledWith(membershipId);
+  });
+
+  it('should throw 400 if membership is not in Pending status', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      status: 'Active',
+    });
+
+    await expect(rejectMembership(membershipId, approverUserId, reason)).rejects.toThrow(
+      ValidationError
+    );
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 403 if approver is the same as the member', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      userId: approverUserId,
+    });
+
+    await expect(rejectMembership(membershipId, approverUserId, reason)).rejects.toThrow(
+      ForbiddenError
+    );
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─── updateMemberRole ───────────────────────────────────────────
+
+describe('updateMemberRole', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMembership.status = 'Active';
+    mockMembership.userId = 'user-uuid';
+    mockMembership.role = 'editor';
+  });
+
+  it('should update member role from editor to admin', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+
+    const result = await updateMemberRole(membershipId, 'admin', approverUserId);
+
+    expect(result.update).toHaveBeenCalledWith({ role: 'admin' });
+  });
+
+  it('should update member role from admin to editor when not last admin', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      role: 'admin',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+    (OrganizationMember.count as jest.Mock).mockResolvedValue(2);
+
+    const result = await updateMemberRole(membershipId, 'editor', approverUserId);
+
+    expect(result.update).toHaveBeenCalledWith({ role: 'editor' });
+  });
+
+  it('should throw 404 if membership not found', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(updateMemberRole(membershipId, 'admin', approverUserId)).rejects.toThrow(
+      NotFoundError
+    );
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 403 if the caller is not an admin of the organization', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(null); // no admin membership found
+
+    await expect(updateMemberRole(membershipId, 'editor', approverUserId)).rejects.toThrow(
+      ForbiddenError
+    );
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 400 if trying to remove the last admin', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      role: 'admin',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+    (OrganizationMember.count as jest.Mock).mockResolvedValue(1); // only 1 admin
+
+    await expect(updateMemberRole(membershipId, 'editor', approverUserId)).rejects.toThrow(
+      ValidationError
+    );
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw 400 if new role is invalid', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+
+    await expect(
+      updateMemberRole(membershipId, 'superadmin' as any, approverUserId)
+    ).rejects.toThrow(ValidationError);
+
+    expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─── removeMember ───────────────────────────────────────────
+
+describe('removeMember', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMembership.status = 'Active';
+    mockMembership.userId = 'user-uuid';
+    mockMembership.role = 'editor';
+  });
+
+  it('should remove a member successfully', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+    (OrganizationMember.count as jest.Mock).mockResolvedValue(2);
+
+    const result = await removeMember(membershipId, approverUserId);
+
+    expect(OrganizationMember.findByPk).toHaveBeenCalledWith(membershipId);
+    expect(result.update).toHaveBeenCalledWith({ status: 'Removed' });
+    expect(result).toMatchObject({ id: membershipId, status: 'Removed' });
+  });
+
+  it('should throw 404 if membership not found', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(removeMember(membershipId, approverUserId)).rejects.toThrow(NotFoundError);
+  });
+
+  it('should throw 403 if caller is not an admin of the organization', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(null);
+
+    await expect(removeMember(membershipId, approverUserId)).rejects.toThrow(ForbiddenError);
+  });
+
+  it('should throw 400 if trying to remove the last admin', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      role: 'admin',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+    (OrganizationMember.count as jest.Mock).mockResolvedValue(1);
+
+    await expect(removeMember(membershipId, approverUserId)).rejects.toThrow(ValidationError);
+  });
+
+  it('should throw 403 if admin tries to remove themselves', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      userId: approverUserId,
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+
+    await expect(removeMember(membershipId, approverUserId)).rejects.toThrow(ForbiddenError);
+  });
+});
+
 // approveOrganization
 
 describe('approveOrganization', () => {
@@ -328,10 +667,7 @@ describe('approveOrganization', () => {
   it('should throw 404 if admin user does not exist', async () => {
     (User.findByPk as jest.Mock).mockResolvedValue(null);
 
-    await expect(approveOrganization(orgId, 'not-admin-uuid')).rejects.toMatchObject({
-      message: 'Admin User not found',
-      status: 404,
-    });
+    await expect(approveOrganization(orgId, 'not-admin-uuid')).rejects.toThrow(NotFoundError);
 
     expect(Organization.findByPk).not.toHaveBeenCalled();
   });
@@ -343,10 +679,7 @@ describe('approveOrganization', () => {
       role: 'user',
     });
 
-    await expect(approveOrganization(orgId, 'other-user')).rejects.toMatchObject({
-      message: 'You do not have permission to perform this action',
-      status: 403,
-    });
+    await expect(approveOrganization(orgId, 'other-user')).rejects.toThrow(ForbiddenError);
 
     expect(Organization.findByPk).not.toHaveBeenCalled();
     expect(mockOrganization.update).not.toHaveBeenCalled();
@@ -356,10 +689,7 @@ describe('approveOrganization', () => {
     (User.findByPk as jest.Mock).mockResolvedValue(mockAdminUser);
     (Organization.findByPk as jest.Mock).mockResolvedValue(null);
 
-    await expect(approveOrganization(orgId, adminUserId)).rejects.toMatchObject({
-      message: 'Organization not found',
-      status: 404,
-    });
+    await expect(approveOrganization(orgId, adminUserId)).rejects.toThrow(NotFoundError);
 
     expect(OrganizationMember.findAll).not.toHaveBeenCalled();
   });
@@ -371,10 +701,7 @@ describe('approveOrganization', () => {
       status: 'Active',
     });
 
-    await expect(approveOrganization(orgId, adminUserId)).rejects.toMatchObject({
-      message: 'Only pending organizations can be approved',
-      status: 400,
-    });
+    await expect(approveOrganization(orgId, adminUserId)).rejects.toThrow(ValidationError);
 
     expect(mockOrganization.update).not.toHaveBeenCalled();
   });
@@ -428,10 +755,9 @@ describe('rejectOrganization', () => {
   it('should throw 404 if admin user does not exist', async () => {
     (User.findByPk as jest.Mock).mockResolvedValue(null);
 
-    await expect(rejectOrganization(orgId, 'not-admin-uuid', reason)).rejects.toMatchObject({
-      message: 'Admin user not found',
-      status: 404,
-    });
+    await expect(rejectOrganization(orgId, 'not-admin-uuid', reason)).rejects.toThrow(
+      NotFoundError
+    );
 
     expect(Organization.findByPk).not.toHaveBeenCalled();
   });
@@ -443,10 +769,7 @@ describe('rejectOrganization', () => {
       role: 'user',
     });
 
-    await expect(rejectOrganization(orgId, 'other-user', reason)).rejects.toMatchObject({
-      message: 'You do not have permission to perform this action',
-      status: 403,
-    });
+    await expect(rejectOrganization(orgId, 'other-user', reason)).rejects.toThrow(ForbiddenError);
 
     expect(Organization.findByPk).not.toHaveBeenCalled();
     expect(mockOrganization.update).not.toHaveBeenCalled();
@@ -456,10 +779,7 @@ describe('rejectOrganization', () => {
     (User.findByPk as jest.Mock).mockResolvedValue(mockAdminUser);
     (Organization.findByPk as jest.Mock).mockResolvedValue(null);
 
-    await expect(rejectOrganization(orgId, adminUserId, reason)).rejects.toMatchObject({
-      message: 'Organization not found',
-      status: 404,
-    });
+    await expect(rejectOrganization(orgId, adminUserId, reason)).rejects.toThrow(NotFoundError);
 
     expect(OrganizationMember.findAll).not.toHaveBeenCalled();
   });
@@ -471,10 +791,7 @@ describe('rejectOrganization', () => {
       status: 'Active',
     });
 
-    await expect(rejectOrganization(orgId, adminUserId, reason)).rejects.toMatchObject({
-      message: 'Only pending organizations can be rejected',
-      status: 400,
-    });
+    await expect(rejectOrganization(orgId, adminUserId, reason)).rejects.toThrow(ValidationError);
 
     expect(mockOrganization.update).not.toHaveBeenCalled();
   });
@@ -569,10 +886,7 @@ describe('getOrganizationMembers', () => {
   it('should throw 404 if organization does not exist', async () => {
     (Organization.findByPk as jest.Mock).mockResolvedValue(null);
 
-    await expect(getOrganizationMembers(orgId)).rejects.toMatchObject({
-      message: 'Organization not found',
-      status: 404,
-    });
+    await expect(getOrganizationMembers(orgId)).rejects.toThrow(NotFoundError);
 
     expect(OrganizationMember.findAll).not.toHaveBeenCalled();
   });

@@ -7,9 +7,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "scss": "sass --watch src/scss/styles.scss src/public/css/styles.css",
-    "dev:full": "concurrently \"yarn dev\" \"yarn scss\"",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "dev:full": "concurrently \"yarn dev\" \"yarn scss\""
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
