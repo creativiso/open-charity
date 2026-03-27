@@ -236,6 +236,58 @@ export const approveOrganization = async (
   }
 };
 
+export const rejectOrganization = async (orgId: string, adminUserId: string, reason: string) => {
+  try {
+    const adminUser = await User.findByPk(adminUserId);
+
+    if (!adminUser) {
+      const error: any = new Error('Admin user not found');
+      error.status = 404;
+      throw error;
+    }
+
+    if (adminUser.role !== 'admin') {
+      const error: any = new Error('You do not have permission to perform this action');
+      error.status = 403;
+      throw error;
+    }
+
+    const organization = await Organization.findByPk(orgId);
+
+    if (!organization) {
+      const error: any = new Error('Organization not found');
+      error.status = 404;
+      throw error;
+    }
+
+    if (organization.status !== 'Pending') {
+      const error: any = new Error('Only pending organizations can be rejected');
+      error.status = 400;
+      throw error;
+    }
+
+    await organization.update({ status: 'Rejected', rejectionReason: reason });
+
+    await OrganizationMember.update(
+      {
+        status: 'Rejected',
+        rejectionReason: reason,
+      },
+      {
+        where: {
+          organizationId: orgId,
+          status: 'Pending',
+        },
+      }
+    );
+
+    return organization;
+  } catch (error) {
+    console.error('Could not reject organization: ', error);
+    throw error;
+  }
+};
+
 export const getOrganizationMembers = async (
   orgId: string,
   filters: MembersFilters = {}
