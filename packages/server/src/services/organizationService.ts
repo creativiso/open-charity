@@ -170,6 +170,72 @@ export const searchOrganizations = async (
   }
 };
 
+export const approveOrganization = async (
+  orgId: string,
+  adminUserId: string
+): Promise<Organization> => {
+  try {
+    const adminUser = await User.findByPk(adminUserId);
+
+    if (!adminUser) {
+      const error: any = new Error('Admin User not found');
+      error.status = 404;
+      throw error;
+    }
+
+    if (adminUser.role !== 'admin') {
+      const error: any = new Error('You do not have permission to perform this action');
+      error.status = 403;
+      throw error;
+    }
+
+    const organization = await Organization.findByPk(orgId);
+
+    if (!organization) {
+      const error: any = new Error('Organization not found');
+      error.status = 404;
+      throw error;
+    }
+
+    if (organization.status !== 'Pending') {
+      const error: any = new Error('Only pending organizations can be approved');
+      error.status = 400;
+      throw error;
+    }
+
+    await organization.update({ status: 'Active' });
+
+    const creatorMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: orgId,
+        role: 'admin',
+        status: 'Pending',
+      },
+    });
+
+    if (creatorMembership) {
+      await creatorMembership.update({
+        status: 'Active',
+        joinedAt: new Date(),
+      });
+    }
+
+    // Return updated organization
+    return (await Organization.findByPk(orgId, {
+      include: [
+        {
+          model: OrganizationMember,
+          attributes: ['id', 'userId', 'role', 'status', 'joinedAt'],
+          required: false,
+        },
+      ],
+    }))!;
+  } catch (error) {
+    console.error('could not approve organization: ', error);
+    throw error;
+  }
+};
+
 export const getOrganizationMembers = async (
   orgId: string,
   filters: MembersFilters = {}
