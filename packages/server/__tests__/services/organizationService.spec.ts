@@ -9,6 +9,7 @@ import {
   approveMembership,
   rejectMembership,
   updateMemberRole,
+  removeMember,
 } from '../../src/services/organizationService';
 
 // Replace real models with fakes
@@ -540,5 +541,74 @@ describe('updateMemberRole', () => {
     });
 
     expect(mockMembership.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─── removeMember ───────────────────────────────────────────
+
+describe('removeMember', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMembership.status = 'Active';
+    mockMembership.userId = 'user-uuid';
+    mockMembership.role = 'editor';
+  });
+
+  it('should remove a member successfully', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+    (OrganizationMember.count as jest.Mock).mockResolvedValue(2);
+
+    const result = await removeMember(membershipId, approverUserId);
+
+    expect(OrganizationMember.findByPk).toHaveBeenCalledWith(membershipId);
+    expect(result.update).toHaveBeenCalledWith({ status: 'Removed' });
+    expect(result).toMatchObject({ id: membershipId, status: 'Removed' });
+  });
+
+  it('should throw 404 if membership not found', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(removeMember(membershipId, approverUserId)).rejects.toMatchObject({
+      message: 'Membership not found',
+      status: 404,
+    });
+  });
+
+  it('should throw 403 if caller is not an admin of the organization', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue(mockMembership);
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(null);
+
+    await expect(removeMember(membershipId, approverUserId)).rejects.toMatchObject({
+      message: 'You do not have admin permission in this organization',
+      status: 403,
+    });
+  });
+
+  it('should throw 400 if trying to remove the last admin', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      role: 'admin',
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+    (OrganizationMember.count as jest.Mock).mockResolvedValue(1);
+
+    await expect(removeMember(membershipId, approverUserId)).rejects.toMatchObject({
+      message: 'Cannot remove the last admin of the organization',
+      status: 400,
+    });
+  });
+
+  it('should throw 403 if admin tries to remove themselves', async () => {
+    (OrganizationMember.findByPk as jest.Mock).mockResolvedValue({
+      ...mockMembership,
+      userId: approverUserId,
+    });
+    (OrganizationMember.findOne as jest.Mock).mockResolvedValue(mockAdminMembership);
+
+    await expect(removeMember(membershipId, approverUserId)).rejects.toMatchObject({
+      message: 'Admins cannot remove themselves',
+      status: 403,
+    });
   });
 });

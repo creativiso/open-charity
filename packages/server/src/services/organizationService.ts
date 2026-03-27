@@ -349,3 +349,59 @@ export const updateMemberRole = async (
     throw err;
   }
 };
+
+export const removeMember = async (
+  membershipId: string,
+  adminUserId: string
+): Promise<OrganizationMember> => {
+  try {
+    const membership = await OrganizationMember.findByPk(membershipId);
+
+    if (!membership) {
+      const error: any = new Error('Membership not found');
+      error.status = 404;
+      throw error;
+    }
+
+    const adminMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: membership.organizationId,
+        userId: adminUserId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (!adminMembership) {
+      const error: any = new Error('You do not have admin permission in this organization');
+      error.status = 403;
+      throw error;
+    }
+
+    if (adminUserId === membership.userId) {
+      const error: any = new Error('Admins cannot remove themselves');
+      error.status = 403;
+      throw error;
+    }
+
+    const adminCount = await OrganizationMember.count({
+      where: {
+        organizationId: membership.organizationId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (adminCount <= 1) {
+      const error: any = new Error('Cannot remove the last admin of the organization');
+      error.status = 400;
+      throw error;
+    }
+
+    await membership.update({ status: 'Removed' });
+    return membership;
+  } catch (err) {
+    console.error('Could not remove member:', err);
+    throw err;
+  }
+};
