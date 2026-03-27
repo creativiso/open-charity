@@ -409,7 +409,6 @@ export const approveOrganization = async (
       });
     }
 
-    // Return updated organization
     return (await Organization.findByPk(orgId, {
       include: [
         {
