@@ -1,10 +1,11 @@
-import { Organization, OrganizationMember, sequelize } from '../../src/models';
+import { Organization, OrganizationMember, sequelize, User } from '../../src/models';
 
 import {
   createOrganization,
   getOrganizationById,
   updateOrganization,
   searchOrganizations,
+  getOrganizationMembers,
 } from '../../src/services/organizationService';
 
 // Replace real models with fakes
@@ -16,7 +17,12 @@ jest.mock('../../src/models', () => ({
     findAndCountAll: jest.fn(),
   },
   OrganizationMember: {
+    findAll: jest.fn(),
+    findOne: jest.fn(),
     create: jest.fn(),
+  },
+  User: {
+    findByPk: jest.fn(),
   },
   sequelize: {
     where: jest.fn(),
@@ -224,5 +230,142 @@ describe('organizationService', () => {
       expect(result.total).toBe(0);
       expect(result.organizations).toHaveLength(0);
     });
+  });
+});
+
+// get organization members
+
+describe('getOrganizationMembers', () => {
+  const orgId = 'org-uuid';
+
+  const mockMembers = [
+    {
+      id: 'member-1-uuid',
+      userId: 'user-1-uuid',
+      role: 'admin',
+      status: 'Active',
+      User: {
+        id: 'user-1-uuid',
+        firstName: 'Elena',
+        lastName: 'Stoeva',
+        email: 'elena@example.com',
+      },
+    },
+    {
+      id: 'member-2-uuid',
+      userId: 'user-2-uuid',
+      role: 'editor',
+      status: 'Active',
+      User: {
+        id: 'user-2-uuid',
+        firstName: 'Nikol',
+        lastName: 'Ivanova',
+        email: 'nikol@example.com',
+      },
+    },
+    {
+      id: 'member-3-uuid',
+      userId: 'user-3-uuid',
+      role: 'editor',
+      status: 'Pending',
+      User: {
+        id: 'user-3-uuid',
+        firstName: 'Stoyan',
+        lastName: 'Kolev',
+        email: 'stoyan@example.com',
+      },
+    },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should fetch all members with user info when no filters provided', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue(mockOrganization);
+    (OrganizationMember.findAll as jest.Mock).mockResolvedValue(mockMembers);
+
+    const result = await getOrganizationMembers(orgId);
+
+    expect(OrganizationMember.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ organizationId: orgId }),
+        include: expect.arrayContaining([expect.objectContaining({ model: User })]),
+      })
+    );
+    expect(result).toHaveLength(3);
+  });
+
+  it('should filter all members by role', async () => {
+    const editorMembers = mockMembers.filter((member) => member.role === 'editor');
+    (Organization.findByPk as jest.Mock).mockResolvedValue(mockOrganization);
+    (OrganizationMember.findAll as jest.Mock).mockResolvedValue(editorMembers);
+
+    const result = await getOrganizationMembers(orgId, { role: 'editor' });
+
+    expect(OrganizationMember.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ organizationId: orgId, role: 'editor' }),
+      })
+    );
+    expect(result).toHaveLength(2);
+    //expect(result).toHaveLength(3);
+  });
+
+  it('should filter all members by status', async () => {
+    const pendingStatus = mockMembers.filter((member) => member.status === 'Pending');
+
+    (Organization.findByPk as jest.Mock).mockResolvedValue(mockOrganization);
+    (OrganizationMember.findAll as jest.Mock).mockResolvedValue(pendingStatus);
+
+    const result = await getOrganizationMembers(orgId, { status: 'Pending' });
+
+    expect(OrganizationMember.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ organizationId: orgId, status: 'Pending' }),
+      })
+    );
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).status).toBe('Pending');
+  });
+
+  it('should filter all members by role and status at the same time', async () => {
+    const activeEditors = mockMembers.filter(
+      (member) => member.role === 'editor' && member.status === 'Active'
+    );
+
+    (Organization.findByPk as jest.Mock).mockResolvedValue(mockOrganization);
+    (OrganizationMember.findAll as jest.Mock).mockResolvedValue(activeEditors);
+
+    const result = await getOrganizationMembers(orgId, { role: 'editor', status: 'Active' });
+
+    expect(OrganizationMember.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ organizationId: orgId, role: 'editor', status: 'Active' }),
+      })
+    );
+
+    expect(result).toHaveLength(1);
+  });
+
+  it('should return an empty array when no filters match', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue(mockOrganization);
+    (OrganizationMember.findAll as jest.Mock).mockResolvedValue([]);
+
+    const result = await getOrganizationMembers(orgId, { role: 'admin', status: 'Pending' });
+
+    expect(result).toHaveLength(0);
+  });
+
+  it('should throw 404 if organization does not exist', async () => {
+    (Organization.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(getOrganizationMembers(orgId)).rejects.toMatchObject({
+      message: 'Organization not found',
+      status: 404,
+    });
+
+    expect(OrganizationMember.findAll).not.toHaveBeenCalled();
   });
 });
