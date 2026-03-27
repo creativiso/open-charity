@@ -1,0 +1,93 @@
+$font-display: 'Roboto', sans-serif;
+
+$font-size-small: 1.2rem;
+$font-size-mid: 1.4rem;
+$font-size-base: 1.6rem;
+$font-size-header: 2.4rem;
+$font-size-brand: 1.9rem;
+$font-size-mobile-link: 3rem;
+
+$font-weight-normal: 400;
+$font-weight-mid: 500;
+$font-weight-bold: 600;
+$font-weight-large: 700;
+
+$green-900: #1a3d2b;
+$green-900-link: #1a3d2bbc;
+$green-700: #2d6a4f;
+$green-700-hover: #2a6349;
+$green-500: #40916c;
+$green-400: #52b788;
+$green-300: #74c69d;
+$green-200: #b7e4c7;
+$green-100: #eef7f2;
+
+$icon-100: #b9bdc2;
+$icon-200: #a1a4a8;
+$light-gray: #eeeeeb;
+$orange: #d4800a;
+$white: #fff;
+
+$text-dark: #1a1f36;
+$text-primary: #313131;
+$text-body: #3b3b3b;
+$text-muted: #8792a2;
+$text-subtle: #9ca3af;
+$text-label: #6b7385;
+$text-nav: #6b7280;
+$text-ui: #4b5563;
+
+$border: 1px solid rgba(224, 221, 216, 0.866);
+$border-warm: 1px solid #e0ddd8; //
+$border-alert-success: 1px solid #a8d5be;
+
+$bg-page: #f9f9f9;
+$bg-card: #ffffff;
+$bg-overlay: rgba(255, 255, 255, 0.97);
+$bg-mobile: rgba(255, 255, 255, 0.98);
+
+$close-hover: rgba(0, 0, 0, 0.05);
+
+$green-hover-bg: rgba(45, 106, 79, 0.06);
+$green-active-bg: rgba(45, 106, 79, 0.08);
+
+$color-error: #e63946;
+$color-error-bg: #fef2f2;
+$color-error-hover: #b91c1c;
+$color-danger: #dc2626;
+$color-danger-dark: #983535;
+$color-success: #1a3d2b;
+
+$hdr-height: 6.4rem;
+$max-width: 128rem;
+
+$radius-sm: 0.6rem;
+$radius-md: 0.75rem;
+$radius-lg: 1rem;
+$radius-full: 9.9rem;
+
+$media-max-width: 1024px;
+$media-min-width: 769px;
+$mobile-min-width-important: 1025px;
+
+$first-circle: 4rem 2rem 0 8rem rgba($green-700, 0.05);
+$second-circle: 12rem 19rem 0 2.5rem rgba($green-400, 0.08);
+$third-circle: 47rem 7rem 0 2rem rgba($green-300, 0.08);
+$fourth-circle: 20rem 49rem 0 4.5rem rgba($green-200, 0.07);
+$fifth-circle: -3.5rem 1.5rem 0 6rem rgba($green-700, 0.05);
+$sixth-circle: -10.5rem 24rem 0 3.3rem rgba($green-400, 0.08);
+$seventh-circle: -20rem 47rem 0 2rem rgba($green-300, 0.07);
+$eight-circle: -50rem 52rem 0 4rem rgba($green-400, 0.06);
+
+$shadow-card:
+  0 0.2rem 0.4rem rgba(0, 0, 0, 0.02),
+  0 8px 16px rgba(0, 0, 0, 0.06);
+$shadow-dropdown:
+  0 8px 24px rgba(0, 0, 0, 0.1),
+  0 2px 8px rgba(0, 0, 0, 0.05);
+$shadow-button-hover: 0 4px 12px rgba(123, 123, 123, 0.4);
+
+$transition-base: all 0.2s ease;
+$transition-slower: all 0.3s ease-in-out;
+$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
