@@ -1,12 +1,13 @@
 import { Op, WhereOptions } from 'sequelize';
 
-import { Organization, OrganizationMember, sequelize } from '../models';
-
 import {
+  MembersFilters,
   CreateOrganizationData,
   SearchOrganizationsFilters,
   UpdateOrganizationData,
-} from '../types/organization.types';
+} from '../interfaces/organizationService.interface';
+
+import { Organization, OrganizationMember, sequelize, User } from '../models';
 
 import { getPagination } from '../utils';
 import { Pagination } from '../types/pagination.types';
@@ -363,5 +364,143 @@ export const removeMember = async (
   } catch (err) {
     console.error('Could not remove member:', err);
     throw err;
+  }
+};
+
+export const approveOrganization = async (
+  orgId: string,
+  adminUserId: string
+): Promise<Organization> => {
+  try {
+    const adminUser = await User.findByPk(adminUserId);
+
+    if (!adminUser) {
+      throw new NotFoundError('Admin User not found');
+    }
+
+    if (adminUser.role !== 'admin') {
+      throw new ForbiddenError('You do not have permission to perform this action');
+    }
+
+    const organization = await Organization.findByPk(orgId);
+
+    if (!organization) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    if (organization.status !== 'Pending') {
+      throw new ValidationError('Only pending organizations can be approved');
+    }
+
+    await organization.update({ status: 'Active' });
+
+    const creatorMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: orgId,
+        role: 'admin',
+        status: 'Pending',
+      },
+    });
+
+    if (creatorMembership) {
+      await creatorMembership.update({
+        status: 'Active',
+        joinedAt: new Date(),
+      });
+    }
+
+    return (await Organization.findByPk(orgId, {
+      include: [
+        {
+          model: OrganizationMember,
+          attributes: ['id', 'userId', 'role', 'status', 'joinedAt'],
+          required: false,
+        },
+      ],
+    }))!;
+  } catch (error) {
+    console.error('could not approve organization: ', error);
+    throw error;
+  }
+};
+
+export const rejectOrganization = async (orgId: string, adminUserId: string, reason: string) => {
+  try {
+    const adminUser = await User.findByPk(adminUserId);
+
+    if (!adminUser) {
+      throw new NotFoundError('Admin user not found');
+    }
+
+    if (adminUser.role !== 'admin') {
+      throw new ForbiddenError('You do not have permission to perform this action');
+    }
+
+    const organization = await Organization.findByPk(orgId);
+
+    if (!organization) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    if (organization.status !== 'Pending') {
+      throw new ValidationError('Only pending organizations can be rejected');
+    }
+
+    await organization.update({ status: 'Rejected', rejectionReason: reason });
+
+    await OrganizationMember.update(
+      {
+        status: 'Rejected',
+        rejectionReason: reason,
+      },
+      {
+        where: {
+          organizationId: orgId,
+          status: 'Pending',
+        },
+      }
+    );
+
+    return organization;
+  } catch (error) {
+    console.error('Could not reject organization: ', error);
+    throw error;
+  }
+};
+
+export const getOrganizationMembers = async (
+  orgId: string,
+  filters: MembersFilters = {}
+): Promise<OrganizationMember[]> => {
+  try {
+    const organization = await Organization.findByPk(orgId);
+
+    if (!organization) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    const where: WhereOptions = { organizationId: orgId };
+
+    if (filters.role) {
+      where.role = filters.role;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    return await OrganizationMember.findAll({
+      where,
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
+      order: [['joinedAt', 'ASC']],
+    });
+  } catch (error) {
+    console.error('Could not get organization members: ', error);
+    throw error;
   }
 };
