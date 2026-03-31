@@ -149,6 +149,22 @@ export const searchOrganizations = async (
       offset,
       limit,
       order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: OrganizationMember,
+          as: 'creator',
+          where: { role: 'admin' },
+          required: false,
+          attributes: ['id', 'role', 'status', 'joinedAt', 'userId', 'organizationId'],
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'name', 'email'],
+            },
+          ],
+        },
+      ],
     });
 
     return {
