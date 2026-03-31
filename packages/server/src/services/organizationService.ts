@@ -429,6 +429,7 @@ export const approveOrganization = async (
       include: [
         {
           model: OrganizationMember,
+          as: 'creator',
           attributes: ['id', 'userId', 'role', 'status', 'joinedAt'],
           required: false,
         },
