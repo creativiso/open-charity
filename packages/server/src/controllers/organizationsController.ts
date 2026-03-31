@@ -1,5 +1,69 @@
 import { Request, Response, NextFunction } from 'express';
-import { Campaign, Organization } from '../models';
+import { Campaign, Organization, OrganizationMember } from '../models';
+import { getPagination } from '../utils';
+import { Op } from 'sequelize';
+
+export const getOrganizations = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { region, city, search } = req.query;
+
+    const queryPage = req.query.page as string;
+    const queryLimit = req.query.limit as string;
+
+    const page = Math.max(1, parseInt(queryPage) || 1);
+    const limit = Math.min(50, parseInt(queryLimit) || 10);
+    const { limit: parsedLimit, offset } = getPagination(page, limit);
+
+    const { rows: organizations, count: total } = await Organization.findAndCountAll({
+      where: {
+        status: 'Active',
+        ...(region && { locationRegion: { [Op.substring]: region } }),
+        ...(city && { locationCity: { [Op.substring]: city } }),
+        ...(search && {
+          [Op.or]: [
+            { name: { [Op.substring]: search } },
+            { description: { [Op.substring]: search } },
+          ],
+        }),
+      },
+      order: [['name', 'ASC']],
+      attributes: [
+        'id',
+        'name',
+        'slug',
+        'description',
+        'locationRegion',
+        'locationCity',
+        'createdAt',
+      ],
+      limit: parsedLimit,
+      offset,
+    });
+
+    if (organizations.length < 1) {
+      res.status(404).json({ message: 'No organizations found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        organizations,
+        pagination: {
+          total,
+          page,
+          limit: parsedLimit,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const getOrganizationById = async (
   req: Request,
@@ -46,6 +110,65 @@ export const getOrganizationById = async (
       data: {
         ...organization.toJSON(),
         activeCampaignsCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOrganizationCampaigns = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const status = req.query.status as string;
+    const queryPage = req.query.page as string;
+    const queryLimit = req.query.limit as string;
+
+    const page = Math.max(1, parseInt(queryPage) || 1);
+    const limit = Math.min(50, parseInt(queryLimit) || 10);
+
+    const { limit: parsedLimit, offset } = getPagination(page, limit);
+
+    const organization = await Organization.findOne({
+      where: {
+        id,
+        status: 'Active',
+      },
+    });
+
+    if (!organization) {
+      res.status(404).json({ message: 'Organization not found' });
+      return;
+    }
+
+    const { rows: campaigns, count: total } = await Campaign.findAndCountAll({
+      where: {
+        organizationId: id,
+        ...(status ? { status } : { status: { [Op.notIn]: ['Expired'] } }),
+      },
+      order: [['createdAt', 'DESC']],
+      attributes: ['id', 'title', 'slug', 'description', 'status', 'createdAt'],
+      limit: parsedLimit,
+      offset,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        organization: {
+          id: organization.id,
+          name: organization.name,
+        },
+        campaigns,
+        pagination: {
+          total,
+          page,
+          limit: parsedLimit,
+        },
       },
     });
   } catch (error) {
