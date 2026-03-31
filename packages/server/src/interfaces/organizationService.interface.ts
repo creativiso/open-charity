@@ -1,3 +1,8 @@
+export interface MembersFilters {
+  role?: string;
+  status?: string;
+}
+
 export interface CreateOrganizationData {
   name: string;
   description: string;

@@ -4,10 +4,12 @@ import adminAuthController from './controllers/api/adminAuthController';
 import authController from './controllers/authController';
 import campaignsController from './controllers/campaignsController';
 import organizationsController from './controllers/organizationsController';
+import adminOrgController from './controllers/api/adminOrganizationsController';
 
 const router: Router = Router();
 
 router.use('/api/admin/auth', adminAuthController);
+router.use('/api/admin/organizations', adminOrgController);
 router.use('/auth', authController);
 router.use('/campaigns', campaignsController);
 router.use('/organizations', organizationsController);
