@@ -15,6 +15,7 @@ class Organization extends Model {
   declare locationCity: string;
   declare isVerified: boolean;
   declare status: 'Pending' | 'Active' | 'Rejected';
+  declare rejectionReason: string | null;
 }
 
 Organization.init(
@@ -75,6 +76,10 @@ Organization.init(
     status: {
       type: DataTypes.ENUM('Pending', 'Active', 'Rejected'),
       defaultValue: 'Pending',
+    },
+    rejectionReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
   },
   {
