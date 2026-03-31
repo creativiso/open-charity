@@ -6,7 +6,9 @@ import {
   approveOrganization,
   rejectOrganization,
   searchOrganizations,
+  updateOrganization,
 } from '../../services/organizationService';
+import { UpdateOrganizationData } from '../../interfaces/organizationService.interface';
 
 const adminOrgController = Router();
 
@@ -76,6 +78,26 @@ adminOrgController.patch(
       res.status(200).json(rejectedOrganization);
     } catch (err: any) {
       console.error('Could not reject organization:' + err);
+      res.status(err.status || 500).json({ error: true, message: err.message });
+    }
+  }
+);
+
+adminOrgController.put(
+  '/:id',
+  verifyToken,
+  requireAdminJWT,
+  async (req: Request, res: Response) => {
+    try {
+      const organizationId = req.params.id as string;
+
+      const updatedData: UpdateOrganizationData = req.body;
+
+      const updatedOrganization = await updateOrganization(organizationId, updatedData);
+
+      res.status(200).json(updatedOrganization);
+    } catch (err: any) {
+      console.error('Could not update organization:' + err);
       res.status(err.status || 500).json({ error: true, message: err.message });
     }
   }
