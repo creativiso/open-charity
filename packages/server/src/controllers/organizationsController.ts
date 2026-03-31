@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { Campaign, Organization, OrganizationMember } from '../models';
 import { getPagination } from '../utils';
 import { Op } from 'sequelize';
+import { validationResult } from 'express-validator';
+import { createOrganization, requestMembership } from '../services/organizationService';
 
 export const getOrganizations = async (
   req: Request,
@@ -173,5 +175,74 @@ export const getOrganizationCampaigns = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const createUserOrganization = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+
+    const { name, description, websiteUrl, contactEmail, locationRegion, locationCity } = req.body;
+
+    const organization = await createOrganization(
+      {
+        name,
+        description,
+        websiteUrl,
+        contactEmail,
+        locationRegion,
+        locationCity,
+      },
+      req.user!.id
+    );
+
+    res.status(201).json({ message: 'Organization created successfully', data: { organization } });
+  } catch (error) {
+    console.error('Create organization error:', error);
+  }
+};
+
+export const joinOrganization = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const userId = req.user!.id;
+
+    const organization = await Organization.findOne({
+      where: {
+        id,
+        status: 'Active',
+      },
+    });
+
+    if (!organization) {
+      res.status(404).json({ message: 'Organization not found' });
+      return;
+    }
+
+    const membership = await requestMembership(userId, id);
+
+    res.status(201).json({
+      message: 'Membership request submitted successfully',
+      data: membership,
+    });
+  } catch (error: any) {
+    if (error.name === 'ConflictError') {
+      res.status(409).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 };
