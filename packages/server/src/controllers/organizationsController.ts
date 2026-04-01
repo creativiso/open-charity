@@ -62,8 +62,9 @@ export const getOrganizations = async (
         },
       },
     });
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    //next(error);
+    res.status(500).json({ error: true, message: error.message });
   }
 };
 
@@ -114,8 +115,9 @@ export const getOrganizationById = async (
         activeCampaignsCount,
       },
     });
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    //next(error);
+    res.status(500).json({ error: true, message: error.message });
   }
 };
 
@@ -173,8 +175,9 @@ export const getOrganizationCampaigns = async (
         },
       },
     });
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    //next(error);
+    res.status(500).json({ error: true, message: error.message });
   }
 };
 
@@ -206,8 +209,9 @@ export const createUserOrganization = async (
     );
 
     res.status(201).json({ message: 'Organization created successfully', data: { organization } });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create organization error:', error);
+    res.status(500).json({ error: true, message: error.message });
   }
 };
 
@@ -270,8 +274,9 @@ export const getMyOrganizations = async (
     res.json({
       data: organizations,
     });
-  } catch (error) {
+  } catch (error: any) {
     // console.error('Error fetching user organizations:', error);
-    next(error);
+    //next(error);
+    res.status(500).json({ error: true, message: error.message });
   }
 };
