@@ -2,13 +2,13 @@ import { Request, Response, Router } from 'express';
 
 import { requireAdminJWT, verifyToken } from '../../middleware/jwtAuth';
 import {
-  approveMembership,
   approveOrganization,
   rejectOrganization,
   searchOrganizations,
   updateOrganization,
 } from '../../services/organizationService';
 import { UpdateOrganizationData } from '../../interfaces/organizationService.interface';
+import { handleError } from '../../utils';
 
 const adminOrgController = Router();
 
@@ -27,9 +27,9 @@ adminOrgController.get(
       );
 
       res.status(200).json(pendingOrganizations);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Getting pending organizations failed:' + err);
-      res.status(err.status || 500).json({ error: true, message: err.message });
+      handleError(err, res);
     }
   }
 );
@@ -46,9 +46,9 @@ adminOrgController.patch(
       const approvedOrganization = await approveOrganization(organizationId, adminId);
 
       res.status(200).json(approvedOrganization);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Could not approve organization:' + err);
-      res.status(err.status || 500).json({ error: true, message: err.message });
+      handleError(err, res);
     }
   }
 );
@@ -76,9 +76,9 @@ adminOrgController.patch(
       );
 
       res.status(200).json(rejectedOrganization);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Could not reject organization:' + err);
-      res.status(err.status || 500).json({ error: true, message: err.message });
+      handleError(err, res);
     }
   }
 );
@@ -96,9 +96,9 @@ adminOrgController.put(
       const updatedOrganization = await updateOrganization(organizationId, updatedData);
 
       res.status(200).json(updatedOrganization);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Could not update organization:' + err);
-      res.status(err.status || 500).json({ error: true, message: err.message });
+      handleError(err, res);
     }
   }
 );
