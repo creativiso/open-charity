@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import { Campaign, Organization, OrganizationMember } from '../models';
+import { Campaign, Organization, OrganizationMember, User } from '../models';
 import { getPagination } from '../utils';
 import { Op } from 'sequelize';
 import { validationResult } from 'express-validator';
-import { createOrganization, requestMembership } from '../services/organizationService';
+import {
+  createOrganization,
+  getOrganizationMembers,
+  requestMembership,
+} from '../services/organizationService';
 
 export const getOrganizations = async (
   req: Request,
@@ -277,6 +281,25 @@ export const getMyOrganizations = async (
   } catch (error: any) {
     // console.error('Error fetching user organizations:', error);
     //next(error);
+    res.status(500).json({ error: true, message: error.message });
+  }
+};
+
+export const getMembersInOrganization = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+
+    const members = await getOrganizationMembers(id);
+
+    res.status(200).json({
+      success: true,
+      data: members,
+    });
+  } catch (error: any) {
     res.status(500).json({ error: true, message: error.message });
   }
 };
