@@ -271,6 +271,7 @@ export const getMyOrganizations = async (
       data: organizations,
     });
   } catch (error) {
-    console.error('Error fetching user organizations:', error);
+    // console.error('Error fetching user organizations:', error);
+    next(error);
   }
 };
