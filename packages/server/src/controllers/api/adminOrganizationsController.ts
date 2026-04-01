@@ -62,7 +62,7 @@ adminOrgController.patch(
       const organizationId = req.params.id as string;
       const adminId = req.user!.id;
 
-      const { rejectionReason } = req.body;
+      const rejectionReason = req.body?.rejectionReason;
 
       if (!rejectionReason) {
         res.status(400).json({ error: true, message: 'Rejection reason is required' });

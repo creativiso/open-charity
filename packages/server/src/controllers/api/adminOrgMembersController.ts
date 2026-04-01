@@ -6,6 +6,7 @@ import {
   approveMembership,
   getMemberships,
   rejectMembership,
+  updateMemberRole,
 } from '../../services/organizationService';
 import { handleError } from '../../utils';
 
@@ -58,7 +59,7 @@ adminOrgMembersController.patch(
       const membershipId = req.params.id as string;
       const adminId = req.user!.id;
 
-      const { rejectionReason } = req.body;
+      const rejectionReason = req.body?.rejectionReason;
 
       if (!rejectionReason) {
         res.status(400).json({ error: true, message: 'Rejection reason is required' });
@@ -70,6 +71,34 @@ adminOrgMembersController.patch(
       res.status(200).json(rejectedMembership);
     } catch (err) {
       console.error('Could not reject membership:' + err);
+      handleError(err, res);
+    }
+  }
+);
+
+adminOrgMembersController.patch(
+  '/:id/role',
+  verifyToken,
+  requireAdminJWT,
+  async (req: Request, res: Response) => {
+    try {
+      const membershipId = req.params.id as string;
+      const adminId = req.user!.id;
+
+      const role = req.body?.role;
+
+      if (!role || !['admin', 'editor'].includes(role)) {
+        return res.status(400).json({
+          error: true,
+          message: "Invalid or missing role. Role must be either 'admin' or 'editor'",
+        });
+      }
+
+      const updatedMembership = await updateMemberRole(membershipId, role, adminId);
+
+      res.status(200).json(updatedMembership);
+    } catch (err) {
+      console.error('Could not update member role:' + err);
       handleError(err, res);
     }
   }

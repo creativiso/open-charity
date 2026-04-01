@@ -229,6 +229,19 @@ export const approveMembership = async (
       throw new NotFoundError('Membership request not found');
     }
 
+    const adminMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: membership.organizationId,
+        userId: approverUserId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permission in this organization');
+    }
+
     if (membership.userId === approverUserId) {
       throw new ForbiddenError('Users cannot approve their own membership requests');
     }
@@ -263,6 +276,19 @@ export const rejectMembership = async (
       throw new NotFoundError('Membership request not found');
     }
 
+    const adminMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: membership.organizationId,
+        userId: approverUserId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permission in this organization');
+    }
+
     if (membership.userId === approverUserId) {
       throw new ForbiddenError('Users cannot reject their own membership requests');
     }
@@ -292,7 +318,7 @@ export const updateMemberRole = async (
     const membership = await OrganizationMember.findByPk(membershipId);
 
     if (!membership) {
-      throw new NotFoundError('Membership request not found');
+      throw new NotFoundError('Membership not found');
     }
 
     const adminMembership = await OrganizationMember.findOne({
