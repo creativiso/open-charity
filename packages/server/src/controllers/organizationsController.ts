@@ -246,3 +246,31 @@ export const joinOrganization = async (
     }
   }
 };
+
+export const getMyOrganizations = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id as string;
+
+    const organizations = await Organization.findAll({
+      attributes: ['id', 'name', 'slug', 'description', 'locationRegion', 'locationCity'],
+      include: [
+        {
+          model: OrganizationMember,
+          where: { userId },
+          attributes: ['id', 'role', 'status', 'joinedAt'],
+        },
+      ],
+      order: [['name', 'DESC']],
+    });
+
+    res.json({
+      data: organizations,
+    });
+  } catch (error) {
+    console.error('Error fetching user organizations:', error);
+  }
+};
