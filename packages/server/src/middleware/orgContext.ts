@@ -76,7 +76,7 @@ export const requireOrgEditor = async (
     }
     next();
   } catch (error: any) {
-    res.status(500).json({ error: true, message: error.message });
+    next(error);
   }
 };
 
@@ -108,6 +108,6 @@ export const requireOrgAdmin = async (req: Request, res: Response, next: NextFun
 
     next();
   } catch (error: any) {
-    res.status(500).json({ error: true, message: error.message });
+    next(error);
   }
 };
