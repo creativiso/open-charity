@@ -6,6 +6,7 @@ import {
   getOrganizationCampaigns,
   getOrganizations,
   joinOrganization,
+  getMyOrganizations,
 } from '../controllers/organizationsController';
 
 import { requireAuth } from '../middleware/auth';
@@ -19,5 +20,6 @@ organizationsRouter.get('/:id/campaigns', getOrganizationCampaigns);
 
 organizationsRouter.post('/', createOrganizationValidation, requireAuth, createUserOrganization);
 organizationsRouter.post('/:id/join', requireAuth, joinOrganization);
+organizationsRouter.get('/users/me/organizations', requireAuth, getMyOrganizations);
 
 export default organizationsRouter;
