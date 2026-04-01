@@ -18,8 +18,8 @@ adminOrgController.get(
   requireAdminJWT,
   async (req: Request, res: Response) => {
     try {
-      const page = req.query.page ? Number(req.query.page) : 1;
-      const limit = req.query.limit ? Number(req.query.limit) : 10;
+      const page = parseInt(req.query.page as string);
+      const limit = parseInt(req.query.limit as string);
 
       const pendingOrganizations = await searchOrganizations(
         { status: 'Pending' },

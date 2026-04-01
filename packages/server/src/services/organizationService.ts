@@ -521,3 +521,57 @@ export const getOrganizationMembers = async (
     throw error;
   }
 };
+
+export const getMemberships = async (filters: MembersFilters = {}, pagination: Pagination = {}) => {
+  try {
+    const { limit, offset } = getPagination(pagination.page, pagination.limit);
+
+    const where: WhereOptions = {};
+
+    if (filters.role) {
+      where.role = filters.role;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.organizationId) {
+      where.organizationId = filters.organizationId;
+    }
+
+    if (filters.userId) {
+      where.userId = filters.userId;
+    }
+
+    const { count, rows } = await OrganizationMember.findAndCountAll({
+      where,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email'],
+        },
+        {
+          model: Organization,
+          attributes: ['id', 'name', 'slug', 'status'],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset,
+      distinct: true,
+    });
+
+    return {
+      memberships: rows,
+      total: count,
+      page: pagination.page || 1,
+      limit,
+      totalPages: Math.ceil(count / limit),
+    };
+  } catch (error) {
+    console.error('Could not get memberships: ', error);
+    throw error;
+  }
+};

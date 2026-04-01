@@ -25,10 +25,11 @@ export const formatDateSimple = (date: Date): string => {
 };
 
 export const getPagination = (page: number = 1, limit: number = 10) => {
-  const parsedLimit = limit > 0 ? limit : 10;
-  const offset = (page - 1) * parsedLimit;
+  const safePage = Math.max(1, page || 1);
+  const safeLimit = Math.min(50, Math.max(1, limit || 10));
+  const offset = (safePage - 1) * safeLimit;
 
-  return { limit: parsedLimit, offset };
+  return { limit: safeLimit, offset };
 };
 
 export const handleError = (err: unknown, res: Response) => {
