@@ -1,4 +1,5 @@
 import { Organization, OrganizationMember, User } from '../../models';
+import { ParsedQs } from 'qs';
 
 declare global {
   namespace Express {
