@@ -6,7 +6,9 @@ import { validationResult } from 'express-validator';
 import {
   createOrganization,
   getOrganizationMembers,
+  removeMember,
   requestMembership,
+  updateMemberRole,
 } from '../services/organizationService';
 
 export const getOrganizations = async (
@@ -67,8 +69,7 @@ export const getOrganizations = async (
       },
     });
   } catch (error: any) {
-    //next(error);
-    res.status(500).json({ error: true, message: error.message });
+    next(error);
   }
 };
 
@@ -120,8 +121,7 @@ export const getOrganizationById = async (
       },
     });
   } catch (error: any) {
-    //next(error);
-    res.status(500).json({ error: true, message: error.message });
+    next(error);
   }
 };
 
@@ -180,8 +180,7 @@ export const getOrganizationCampaigns = async (
       },
     });
   } catch (error: any) {
-    //next(error);
-    res.status(500).json({ error: true, message: error.message });
+    next(error);
   }
 };
 
@@ -215,7 +214,7 @@ export const createUserOrganization = async (
     res.status(201).json({ message: 'Organization created successfully', data: { organization } });
   } catch (error: any) {
     console.error('Create organization error:', error);
-    res.status(500).json({ error: true, message: error.message });
+    next(error);
   }
 };
 
@@ -252,6 +251,7 @@ export const joinOrganization = async (
     } else {
       res.status(500).json({ message: 'Internal server error' });
     }
+    next(error);
   }
 };
 
@@ -280,8 +280,7 @@ export const getMyOrganizations = async (
     });
   } catch (error: any) {
     // console.error('Error fetching user organizations:', error);
-    //next(error);
-    res.status(500).json({ error: true, message: error.message });
+    next(error);
   }
 };
 
@@ -300,6 +299,82 @@ export const getMembersInOrganization = async (
       data: members,
     });
   } catch (error: any) {
-    res.status(500).json({ error: true, message: error.message });
+    next(error);
+  }
+};
+
+export const updateRoleOfMember = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const memberId = req.params.memberId as string;
+    const { role } = req.body;
+
+    const membership = await OrganizationMember.findOne({
+      where: {
+        userId: memberId,
+        organizationId: id,
+      },
+    });
+
+    if (!membership) {
+      res.status(404).json({ message: 'Membership not found' });
+      return;
+    }
+
+    const validRoles = ['admin', 'editor'];
+
+    if (!validRoles.includes(role)) {
+      res.status(400).json({ error: true, message: 'Invalid role specified' });
+      return;
+    }
+
+    const updatedMember = await updateMemberRole(membership.id, role, req.user!.id);
+
+    console.log(updatedMember);
+
+    res.status(200).json({
+      success: true,
+      message: 'Member role updated successfully',
+      data: updatedMember,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+export const deleteMember = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const memberId = req.params.memberId as string;
+
+    const membership = await OrganizationMember.findOne({
+      where: {
+        userId: memberId,
+        organizationId: id,
+      },
+    });
+
+    if (!membership) {
+      res.status(404).json({ message: 'Membership not found' });
+      return;
+    }
+
+    const deletedMember = await removeMember(membership.id, req.user!.id);
+
+    res.status(204).json({
+      success: true,
+      message: 'Member removed successfully',
+      data: deletedMember,
+    });
+  } catch (error: any) {
+    next(error);
   }
 };
