@@ -86,7 +86,7 @@ export const requireOrgAdmin = async (req: Request, res: Response, next: NextFun
     return;
   }
 
-  const organizationId = req.params.organizationId as string;
+  const organizationId = req.params.id as string;
 
   if (!organizationId) {
     res.status(400).json({ error: true, message: 'Organization ID is required!' });
