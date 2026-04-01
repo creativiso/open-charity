@@ -494,7 +494,7 @@ export const getOrganizationMembers = async (
       include: [
         {
           model: User,
-          attributes: ['id', 'firstName', 'lastName', 'email'],
+          attributes: ['id', 'name', 'email'],
         },
       ],
       order: [['joinedAt', 'ASC']],
