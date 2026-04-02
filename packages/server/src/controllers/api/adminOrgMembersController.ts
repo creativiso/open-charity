@@ -18,8 +18,8 @@ adminOrgMembersController.get(
   requireAdminJWT,
   async (req: Request, res: Response) => {
     try {
-      const page = parseInt(req.query.page as string);
-      const limit = parseInt(req.query.limit as string);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
 
       const result = await getMemberships({ status: 'Pending' }, { page, limit });
 
@@ -88,10 +88,11 @@ adminOrgMembersController.patch(
       const role = req.body?.role;
 
       if (!role || !['admin', 'editor'].includes(role)) {
-        return res.status(400).json({
+        res.status(400).json({
           error: true,
           message: "Invalid or missing role. Role must be either 'admin' or 'editor'",
         });
+        return;
       }
 
       const updatedMembership = await updateMemberRole(membershipId, role, adminId);
