@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { Campaign, Organization, OrganizationMember, User } from '../models';
-import { getPagination } from '../utils';
 import { Op } from 'sequelize';
 import { validationResult } from 'express-validator';
+
 import {
   createOrganization,
   getOrganizationMembers,
@@ -10,6 +9,8 @@ import {
   requestMembership,
   updateMemberRole,
 } from '../services/organizationService';
+import { Campaign, Organization, OrganizationMember } from '../models';
+import { getPagination } from '../utils';
 
 export const getOrganizations = async (
   req: Request,
@@ -19,14 +20,12 @@ export const getOrganizations = async (
   try {
     const { region, city, search } = req.query;
 
-    const queryPage = req.query.page as string;
-    const queryLimit = req.query.limit as string;
+    const queryPage = parseInt(req.query.page as string) || 1;
+    const queryLimit = parseInt(req.query.limit as string) || 10;
 
-    const page = Math.max(1, parseInt(queryPage) || 1);
-    const limit = Math.min(50, parseInt(queryLimit) || 10);
-    const { limit: parsedLimit, offset } = getPagination(page, limit);
+    const { limit: parsedLimit, offset } = getPagination(queryPage, queryLimit);
 
-    const { rows: organizations, count: total } = await Organization.findAndCountAll({
+    const { rows: organizations, count } = await Organization.findAndCountAll({
       where: {
         status: 'Active',
         ...(region && { locationRegion: { [Op.substring]: region } }),
@@ -58,13 +57,13 @@ export const getOrganizations = async (
     }
 
     res.json({
-      success: true,
       data: {
         organizations,
         pagination: {
-          total,
-          page,
+          count,
+          queryPage,
           limit: parsedLimit,
+          totalPages: Math.ceil(count / parsedLimit),
         },
       },
     });
@@ -95,7 +94,6 @@ export const getOrganizationById = async (
         'contactEmail',
         'locationRegion',
         'locationCity',
-        'isVerified',
         'status',
         'createdAt',
       ],
@@ -114,9 +112,8 @@ export const getOrganizationById = async (
     });
 
     res.json({
-      success: true,
       data: {
-        ...organization.toJSON(),
+        organization,
         activeCampaignsCount,
       },
     });
@@ -133,13 +130,10 @@ export const getOrganizationCampaigns = async (
   try {
     const { id } = req.params;
     const status = req.query.status as string;
-    const queryPage = req.query.page as string;
-    const queryLimit = req.query.limit as string;
+    const queryPage = parseInt(req.query.page as string) || 1;
+    const queryLimit = parseInt(req.query.limit as string) || 10;
 
-    const page = Math.max(1, parseInt(queryPage) || 1);
-    const limit = Math.min(50, parseInt(queryLimit) || 10);
-
-    const { limit: parsedLimit, offset } = getPagination(page, limit);
+    const { limit: parsedLimit, offset } = getPagination(queryPage, queryLimit);
 
     const organization = await Organization.findOne({
       where: {
@@ -153,7 +147,7 @@ export const getOrganizationCampaigns = async (
       return;
     }
 
-    const { rows: campaigns, count: total } = await Campaign.findAndCountAll({
+    const { rows: campaigns, count } = await Campaign.findAndCountAll({
       where: {
         organizationId: id,
         ...(status ? { status } : { status: { [Op.notIn]: ['Expired'] } }),
@@ -165,7 +159,6 @@ export const getOrganizationCampaigns = async (
     });
 
     res.json({
-      success: true,
       data: {
         organization: {
           id: organization.id,
@@ -173,9 +166,10 @@ export const getOrganizationCampaigns = async (
         },
         campaigns,
         pagination: {
-          total,
-          page,
+          count,
+          queryPage,
           limit: parsedLimit,
+          totalPages: Math.ceil(count / parsedLimit),
         },
       },
     });
@@ -213,7 +207,6 @@ export const createUserOrganization = async (
 
     res.status(201).json({ message: 'Organization created successfully', data: { organization } });
   } catch (error: any) {
-    console.error('Create organization error:', error);
     next(error);
   }
 };
@@ -269,17 +262,16 @@ export const getMyOrganizations = async (
         {
           model: OrganizationMember,
           where: { userId },
-          attributes: ['id', 'role', 'status', 'joinedAt'],
+          attributes: ['id', 'role', 'status'],
         },
       ],
       order: [['name', 'DESC']],
     });
 
-    res.json({
+    res.status(200).json({
       data: organizations,
     });
   } catch (error: any) {
-    // console.error('Error fetching user organizations:', error);
     next(error);
   }
 };
@@ -295,7 +287,6 @@ export const getMembersInOrganization = async (
     const members = await getOrganizationMembers(id);
 
     res.status(200).json({
-      success: true,
       data: members,
     });
   } catch (error: any) {
@@ -311,6 +302,7 @@ export const updateRoleOfMember = async (
   try {
     const id = req.params.id as string;
     const memberId = req.params.memberId as string;
+    const adminId = req.user!.id as string;
     const { role } = req.body;
 
     const membership = await OrganizationMember.findOne({
@@ -332,12 +324,9 @@ export const updateRoleOfMember = async (
       return;
     }
 
-    const updatedMember = await updateMemberRole(membership.id, role, req.user!.id);
+    const updatedMember = await updateMemberRole(membership.id, role, adminId);
 
-    console.log(updatedMember);
-
-    res.status(200).json({
-      success: true,
+    res.status(204).json({
       message: 'Member role updated successfully',
       data: updatedMember,
     });
@@ -354,6 +343,7 @@ export const deleteMember = async (
   try {
     const id = req.params.id as string;
     const memberId = req.params.memberId as string;
+    const adminId = req.user!.id as string;
 
     const membership = await OrganizationMember.findOne({
       where: {
@@ -367,10 +357,9 @@ export const deleteMember = async (
       return;
     }
 
-    const deletedMember = await removeMember(membership.id, req.user!.id);
+    const deletedMember = await removeMember(membership.id, adminId);
 
     res.status(204).json({
-      success: true,
       message: 'Member removed successfully',
       data: deletedMember,
     });
