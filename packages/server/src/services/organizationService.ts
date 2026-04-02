@@ -287,7 +287,6 @@ export const updateMemberRole = async (
         status: 'Active',
       },
     });
-
     if (!adminMembership) {
       throw new ForbiddenError('You do not have admin permission in this organization');
     }
@@ -347,16 +346,18 @@ export const removeMember = async (
       throw new ForbiddenError('Admins cannot remove themselves');
     }
 
-    const adminCount = await OrganizationMember.count({
-      where: {
-        organizationId: membership.organizationId,
-        role: 'admin',
-        status: 'Active',
-      },
-    });
+    if (membership.role === 'admin') {
+      const adminCount = await OrganizationMember.count({
+        where: {
+          organizationId: membership.organizationId,
+          role: 'admin',
+          status: 'Active',
+        },
+      });
 
-    if (adminCount <= 1) {
-      throw new ValidationError('Cannot remove the last admin of the organization');
+      if (adminCount <= 1) {
+        throw new ValidationError('Cannot remove the last admin of the organization');
+      }
     }
 
     await membership.update({ status: 'Removed' });
@@ -494,7 +495,7 @@ export const getOrganizationMembers = async (
       include: [
         {
           model: User,
-          attributes: ['id', 'firstName', 'lastName', 'email'],
+          attributes: ['id', 'name', 'email'],
         },
       ],
       order: [['joinedAt', 'ASC']],
