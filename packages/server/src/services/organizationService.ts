@@ -9,7 +9,7 @@ import {
 
 import { Organization, OrganizationMember, sequelize, User } from '../models';
 
-import { getPagination } from '../utils';
+import { generateSlug, getPagination } from '../utils';
 import { Pagination } from '../types/pagination.types';
 
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
@@ -110,7 +110,10 @@ export const updateOrganization = async (
       }
     }
 
-    await organization.update(data);
+    await organization.update({
+      ...data,
+      slug: data.name && generateSlug(data.name),
+    });
 
     return organization;
   } catch (err) {
@@ -124,7 +127,7 @@ export const searchOrganizations = async (
   pagination: Pagination = {}
 ) => {
   try {
-    const { limit, offset } = getPagination(pagination.page, pagination.limit);
+    const { limit, offset, safePage } = getPagination(pagination.page, pagination.limit);
 
     const where: WhereOptions = {};
 
@@ -170,7 +173,7 @@ export const searchOrganizations = async (
     return {
       organizations: rows,
       total: count,
-      page: pagination.page || 1,
+      page: safePage,
       limit,
       totalPages: Math.ceil(count / limit),
     };
@@ -551,7 +554,7 @@ export const getOrganizationMembers = async (
 
 export const getMemberships = async (filters: MembersFilters = {}, pagination: Pagination = {}) => {
   try {
-    const { limit, offset } = getPagination(pagination.page, pagination.limit);
+    const { limit, offset, safePage } = getPagination(pagination.page, pagination.limit);
 
     const where: WhereOptions = {};
 
@@ -593,7 +596,7 @@ export const getMemberships = async (filters: MembersFilters = {}, pagination: P
     return {
       memberships: rows,
       total: count,
-      page: pagination.page || 1,
+      page: safePage,
       limit,
       totalPages: Math.ceil(count / limit),
     };
