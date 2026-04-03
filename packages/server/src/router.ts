@@ -1,13 +1,18 @@
 import { Router } from 'express';
 
-import adminAuthController from './controllers/api/adminAuthController';
 import authController from './controllers/authController';
 import campaignsController from './controllers/campaignsController';
+
 import organizationsRouter from './routes/organizationsRoutes';
+import adminAuthRouter from './routes/adminAuthRoutes';
+import adminOrganizationsRouter from './routes/adminOrganizationsRoutes';
+import adminOrgMembersRoutes from './routes/adminOrgMembersRoutes';
 
 const router: Router = Router();
 
-router.use('/api/admin/auth', adminAuthController);
+router.use('/api/admin/auth', adminAuthRouter);
+router.use('/api/admin/organizations', adminOrganizationsRouter);
+router.use('/api/admin/organization-members', adminOrgMembersRoutes);
 router.use('/auth', authController);
 router.use('/campaigns', campaignsController);
 router.use('/organizations', organizationsRouter);

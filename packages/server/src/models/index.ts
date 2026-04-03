@@ -19,6 +19,11 @@ User.hasMany(Campaign, {
 
 Organization.hasMany(OrganizationMember, {
   foreignKey: 'organizationId',
+  as: 'memberships',
+});
+Organization.hasOne(OrganizationMember, {
+  foreignKey: 'organizationId',
+  as: 'creator',
 });
 Organization.hasMany(Campaign, {
   foreignKey: 'organizationId',
@@ -34,6 +39,7 @@ OrganizationMember.belongsTo(Organization, {
 });
 OrganizationMember.belongsTo(User, {
   foreignKey: 'userId',
+  as: 'user',
 });
 
 Category.hasMany(Campaign, {

@@ -20,10 +20,10 @@ export const getOrganizations = async (
   try {
     const { region, city, search } = req.query;
 
-    const queryPage = parseInt(req.query.page as string) || 1;
-    const queryLimit = parseInt(req.query.limit as string) || 10;
+    const queryPage = parseInt(req.query.page as string);
+    const queryLimit = parseInt(req.query.limit as string);
 
-    const { limit: parsedLimit, offset } = getPagination(queryPage, queryLimit);
+    const { limit: parsedLimit, offset, safePage: page } = getPagination(queryPage, queryLimit);
 
     const { rows: organizations, count } = await Organization.findAndCountAll({
       where: {
@@ -61,7 +61,7 @@ export const getOrganizations = async (
         organizations,
         pagination: {
           count,
-          queryPage,
+          page,
           limit: parsedLimit,
           totalPages: Math.ceil(count / parsedLimit),
         },
@@ -130,10 +130,10 @@ export const getOrganizationCampaigns = async (
   try {
     const { id } = req.params;
     const status = req.query.status as string;
-    const queryPage = parseInt(req.query.page as string) || 1;
-    const queryLimit = parseInt(req.query.limit as string) || 10;
+    const queryPage = parseInt(req.query.page as string);
+    const queryLimit = parseInt(req.query.limit as string);
 
-    const { limit: parsedLimit, offset } = getPagination(queryPage, queryLimit);
+    const { limit: parsedLimit, offset, safePage: page } = getPagination(queryPage, queryLimit);
 
     const organization = await Organization.findOne({
       where: {
@@ -167,7 +167,7 @@ export const getOrganizationCampaigns = async (
         campaigns,
         pagination: {
           count,
-          queryPage,
+          page,
           limit: parsedLimit,
           totalPages: Math.ceil(count / parsedLimit),
         },

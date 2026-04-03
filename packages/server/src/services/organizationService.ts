@@ -9,7 +9,7 @@ import {
 
 import { Organization, OrganizationMember, sequelize, User } from '../models';
 
-import { getPagination } from '../utils';
+import { generateSlug, getPagination } from '../utils';
 import { Pagination } from '../types/pagination.types';
 
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
@@ -110,7 +110,10 @@ export const updateOrganization = async (
       }
     }
 
-    await organization.update(data);
+    await organization.update({
+      ...data,
+      slug: data.name && generateSlug(data.name),
+    });
 
     return organization;
   } catch (err) {
@@ -124,7 +127,7 @@ export const searchOrganizations = async (
   pagination: Pagination = {}
 ) => {
   try {
-    const { limit, offset } = getPagination(pagination.page, pagination.limit);
+    const { limit, offset, safePage } = getPagination(pagination.page, pagination.limit);
 
     const where: WhereOptions = {};
 
@@ -149,12 +152,28 @@ export const searchOrganizations = async (
       offset,
       limit,
       order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: OrganizationMember,
+          as: 'creator',
+          where: { role: 'admin' },
+          required: false,
+          attributes: ['id', 'role', 'status', 'joinedAt', 'userId', 'organizationId'],
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'name', 'email'],
+            },
+          ],
+        },
+      ],
     });
 
     return {
       organizations: rows,
       total: count,
-      page: pagination.page || 1,
+      page: safePage,
       limit,
       totalPages: Math.ceil(count / limit),
     };
@@ -213,6 +232,19 @@ export const approveMembership = async (
       throw new NotFoundError('Membership request not found');
     }
 
+    const adminMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: membership.organizationId,
+        userId: approverUserId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permission in this organization');
+    }
+
     if (membership.userId === approverUserId) {
       throw new ForbiddenError('Users cannot approve their own membership requests');
     }
@@ -247,6 +279,19 @@ export const rejectMembership = async (
       throw new NotFoundError('Membership request not found');
     }
 
+    const adminMembership = await OrganizationMember.findOne({
+      where: {
+        organizationId: membership.organizationId,
+        userId: approverUserId,
+        role: 'admin',
+        status: 'Active',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permission in this organization');
+    }
+
     if (membership.userId === approverUserId) {
       throw new ForbiddenError('Users cannot reject their own membership requests');
     }
@@ -276,7 +321,7 @@ export const updateMemberRole = async (
     const membership = await OrganizationMember.findByPk(membershipId);
 
     if (!membership) {
-      throw new NotFoundError('Membership request not found');
+      throw new NotFoundError('Membership not found');
     }
 
     const adminMembership = await OrganizationMember.findOne({
@@ -414,6 +459,7 @@ export const approveOrganization = async (
       include: [
         {
           model: OrganizationMember,
+          as: 'creator',
           attributes: ['id', 'userId', 'role', 'status', 'joinedAt'],
           required: false,
         },
@@ -502,6 +548,60 @@ export const getOrganizationMembers = async (
     });
   } catch (error) {
     console.error('Could not get organization members: ', error);
+    throw error;
+  }
+};
+
+export const getMemberships = async (filters: MembersFilters = {}, pagination: Pagination = {}) => {
+  try {
+    const { limit, offset, safePage } = getPagination(pagination.page, pagination.limit);
+
+    const where: WhereOptions = {};
+
+    if (filters.role) {
+      where.role = filters.role;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.organizationId) {
+      where.organizationId = filters.organizationId;
+    }
+
+    if (filters.userId) {
+      where.userId = filters.userId;
+    }
+
+    const { count, rows } = await OrganizationMember.findAndCountAll({
+      where,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email'],
+        },
+        {
+          model: Organization,
+          attributes: ['id', 'name', 'slug', 'status'],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset,
+      distinct: true,
+    });
+
+    return {
+      memberships: rows,
+      total: count,
+      page: safePage,
+      limit,
+      totalPages: Math.ceil(count / limit),
+    };
+  } catch (error) {
+    console.error('Could not get memberships: ', error);
     throw error;
   }
 };

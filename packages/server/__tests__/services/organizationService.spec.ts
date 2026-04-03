@@ -1,6 +1,6 @@
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../src/errors';
 
-import { Organization, OrganizationMember, sequelize, User } from '../../src/models';
+import { Organization, OrganizationMember, User } from '../../src/models';
 
 import {
   createOrganization,
@@ -45,7 +45,9 @@ jest.mock('../../src/models', () => ({
 }));
 
 jest.mock('../../src/utils', () => ({
-  getPagination: jest.fn().mockReturnValue({ limit: 10, offset: 0 }),
+  getPagination: jest.fn().mockReturnValue({ limit: 10, offset: 0, safePage: 1 }),
+  generateSlug: jest.fn((name: string) => name.toLowerCase().replace(/\s+/g, '-')),
+  handleError: jest.fn(),
 }));
 
 const mockOrganization = {
