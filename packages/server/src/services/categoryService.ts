@@ -89,3 +89,28 @@ export const updateCategory = async (id: string, data: UpdateCategoryData, admin
     throw err;
   }
 };
+
+export const toggleCategoryStatus = async (id: string, adminUserId: string) => {
+  const category = await Category.findByPk(id);
+
+  if (!category) {
+    throw new NotFoundError('Could not find a category with this ID');
+  }
+
+  const adminMembership = await User.findOne({
+    where: {
+      id: adminUserId,
+      role: 'admin',
+    },
+  });
+
+  if (!adminMembership) {
+    throw new ForbiddenError('You do not have admin permissions');
+  }
+
+  await category.update({
+    isActive: !category.isActive,
+  });
+
+  return category;
+};

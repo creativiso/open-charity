@@ -1,6 +1,10 @@
 import { Category, Campaign, User, sequelize } from '../../src/models';
 
-import { createCategory, updateCategory } from '../../src/services/categoryService';
+import {
+  createCategory,
+  toggleCategoryStatus,
+  updateCategory,
+} from '../../src/services/categoryService';
 
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../src/errors';
 
@@ -177,5 +181,59 @@ describe('updateCategory', () => {
 
     expect(Category.findOne).not.toHaveBeenCalled();
     expect(mockCategory.update).toHaveBeenCalled();
+  });
+});
+
+// ─── toggleCategoryStatus ─────────────────────────────────────────
+
+describe('toggleCategoryStatus', () => {
+  beforeEach(() => {
+    (User.findOne as jest.Mock).mockResolvedValue(mockAdmin);
+  });
+
+  it('should toggle isActive from true to false', async () => {
+    mockCategory.isActive = true;
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+
+    const result = await toggleCategoryStatus('category-uuid', 'admin-uuid');
+
+    expect(mockCategory.update).toHaveBeenCalledWith({
+      isActive: false,
+    });
+    expect(result.isActive).toBe(false);
+    expect(result).toEqual(mockCategory);
+  });
+
+  it('should toggle isActive from false to true', async () => {
+    mockCategory.isActive = false;
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+
+    const result = await toggleCategoryStatus('category-uuid', 'admin-uuid');
+
+    expect(mockCategory.update).toHaveBeenCalledWith({
+      isActive: true,
+    });
+    expect(result.isActive).toBe(true);
+  });
+
+  it('should throw NotFoundError if category does not exist', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(toggleCategoryStatus('non-existent-uuid', 'admin-uuid')).rejects.toThrow(
+      NotFoundError
+    );
+
+    expect(mockCategory.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw ForbiddenError if user is not admin', async () => {
+    (User.findOne as jest.Mock).mockResolvedValue(null);
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+
+    await expect(toggleCategoryStatus('category-uuid', 'non-admin-uuid')).rejects.toThrow(
+      ForbiddenError
+    );
+
+    expect(mockCategory.update).not.toHaveBeenCalled();
   });
 });
