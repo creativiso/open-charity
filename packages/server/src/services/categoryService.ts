@@ -199,3 +199,37 @@ export const getCategoryById = async (id: string) => {
     throw err;
   }
 };
+
+export const reorderCategories = async (orderedIds: string[], adminUserId: string) => {
+  try {
+    if (!orderedIds || orderedIds.length === 0) {
+      throw new ValidationError('orderedIds list cannot be empty');
+    }
+
+    const adminMembership = await User.findOne({
+      where: {
+        id: adminUserId,
+        role: 'admin',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permissions');
+    }
+
+    await sequelize.transaction(async (t) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await Category.update(
+          { displayOrder: i },
+          {
+            where: { id: orderedIds[i] },
+            transaction: t,
+          }
+        );
+      }
+    });
+  } catch (err) {
+    console.error('Could not get category:', err);
+    throw err;
+  }
+};

@@ -6,6 +6,7 @@ import {
   getActiveCategories,
   getAllCategories,
   getCategoryById,
+  reorderCategories,
   toggleCategoryStatus,
   updateCategory,
 } from '../../src/services/categoryService';
@@ -363,5 +364,41 @@ describe('getCategoryById', () => {
     const result = await getCategoryById('bad-uuid');
 
     expect(result).toBeNull();
+  });
+});
+
+// ─── reorderCategories ────────────────────────────────────────────
+
+describe('reorderCategories', () => {
+  beforeEach(() => {
+    (User.findOne as jest.Mock).mockResolvedValue(mockAdmin);
+    (sequelize.transaction as jest.Mock).mockImplementation((cb: () => any) => cb());
+  });
+
+  it('should update displayOrder for each category', async () => {
+    const orderedIds = ['uuid-1', 'uuid-2', 'uuid-3'];
+    (Category.update as jest.Mock).mockResolvedValue([1]);
+
+    await reorderCategories(orderedIds, 'admin-uuid');
+
+    expect(Category.update).toHaveBeenCalledTimes(3);
+    expect(Category.update).toHaveBeenCalledWith(
+      { displayOrder: 0 },
+      expect.objectContaining({ where: { id: 'uuid-1' } })
+    );
+    expect(Category.update).toHaveBeenCalledWith(
+      { displayOrder: 1 },
+      expect.objectContaining({ where: { id: 'uuid-2' } })
+    );
+    expect(Category.update).toHaveBeenCalledWith(
+      { displayOrder: 2 },
+      expect.objectContaining({ where: { id: 'uuid-3' } })
+    );
+  });
+
+  it('should throw ValidationError if orderedIds is empty', async () => {
+    await expect(reorderCategories([], 'admin-uuid')).rejects.toThrow(ValidationError);
+
+    expect(Category.update).not.toHaveBeenCalled();
   });
 });
