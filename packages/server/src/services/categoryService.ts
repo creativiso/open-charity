@@ -177,3 +177,25 @@ export const getAllCategories = async () => {
     throw err;
   }
 };
+
+export const getCategoryById = async (id: string) => {
+  try {
+    const category = await Category.findByPk(id, {
+      attributes: {
+        include: [[sequelize.fn('COUNT', sequelize.col('Campaigns.id')), 'campaignCount']],
+      },
+      include: [
+        {
+          model: Campaign,
+          attributes: [],
+        },
+      ],
+      group: ['Category.id'],
+    });
+
+    return category;
+  } catch (err) {
+    console.error('Could not get category:', err);
+    throw err;
+  }
+};

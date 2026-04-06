@@ -5,6 +5,7 @@ import {
   deleteCategory,
   getActiveCategories,
   getAllCategories,
+  getCategoryById,
   toggleCategoryStatus,
   updateCategory,
 } from '../../src/services/categoryService';
@@ -333,5 +334,34 @@ describe('getAllCategories', () => {
     const result = await getAllCategories();
 
     expect(result).toHaveLength(0);
+  });
+});
+
+// ─── getCategoryById ──────────────────────────────────────────────
+
+describe('getCategoryById', () => {
+  it('should return category with campaign count', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue({
+      ...mockCategory,
+      campaignCount: 5,
+    });
+
+    const result = await getCategoryById('category-uuid');
+
+    expect(Category.findByPk).toHaveBeenCalledWith(
+      'category-uuid',
+      expect.objectContaining({
+        attributes: expect.objectContaining({ include: expect.any(Array) }),
+      })
+    );
+    expect(result).toHaveProperty('campaignCount');
+  });
+
+  it('should return null if category not found', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(null);
+
+    const result = await getCategoryById('bad-uuid');
+
+    expect(result).toBeNull();
   });
 });
