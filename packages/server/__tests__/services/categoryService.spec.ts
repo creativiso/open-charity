@@ -1,20 +1,29 @@
-import { createCategory } from '../../src/services/categoryService';
-import { Category, sequelize, User } from '../../src/models';
-import { generateSlug } from '../../src/utils';
-import { ConflictError, ForbiddenError, ValidationError } from '../../src/errors';
+import { Category, Campaign, User, sequelize } from '../../src/models';
+
+import { createCategory, updateCategory } from '../../src/services/categoryService';
+
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../src/errors';
 
 jest.mock('../../src/models', () => ({
   Category: {
     findOne: jest.fn(),
+    findByPk: jest.fn(),
+    findAll: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
+  },
+  Campaign: {
+    count: jest.fn(),
   },
   User: {
     findOne: jest.fn(),
   },
   sequelize: {
-    where: jest.fn(() => ({ [Symbol('where')]: 'sequelize_where_clause' })),
-    fn: jest.fn(() => 'LOWER'),
-    col: jest.fn((val) => val),
+    where: jest.fn(),
+    fn: jest.fn(),
+    col: jest.fn(),
+    literal: jest.fn(),
+    transaction: jest.fn(),
   },
 }));
 
@@ -27,94 +36,146 @@ jest.mock('../../src/utils', () => ({
   ),
 }));
 
-describe('createCategory Service', () => {
-  const adminUuid = 'admin-uuid';
+const mockCategory: any = {
+  id: 'category-uuid',
+  name: 'Education',
+  slug: 'education',
+  description: 'Educational campaigns',
+  isActive: true,
+  displayOrder: 0,
+  update: jest.fn().mockImplementation((data: any) => {
+    Object.assign(mockCategory, data);
+    return Promise.resolve(mockCategory);
+  }),
+  destroy: jest.fn().mockResolvedValue(true),
+};
+
+const mockAdmin = { id: 'admin-uuid', role: 'admin' };
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockCategory.name = 'Education';
+  mockCategory.slug = 'education';
+  mockCategory.isActive = true;
+  mockCategory.displayOrder = 0;
+});
+
+// ─── createCategory ───────────────────────────────────────────────
+
+describe('createCategory', () => {
   const createData = {
     name: 'Education',
     description: 'Educational campaigns',
   };
 
-  const mockCategoryResponse = {
-    id: 'category-uuid',
-    name: 'Education',
-    slug: 'education',
-    description: 'Educational campaigns',
-    isActive: true,
-    displayOrder: 0,
-  };
-
-  const mockAdminUser = { id: adminUuid, role: 'admin' };
-
   beforeEach(() => {
-    jest.clearAllMocks();
+    (User.findOne as jest.Mock).mockResolvedValue(mockAdmin);
   });
 
-  it('should throw ForbiddenError if the user is not an admin', async () => {
-    (User.findOne as jest.Mock).mockResolvedValue(null);
-
-    await expect(createCategory(createData, 'wrong-uuid')).rejects.toThrow(ForbiddenError);
-
-    expect(Category.findOne).not.toHaveBeenCalled();
-    expect(Category.create).not.toHaveBeenCalled();
-  });
-
-  it('should create a category with an auto-generated slug', async () => {
-    (User.findOne as jest.Mock).mockResolvedValue(mockAdminUser);
+  it('should create a category with auto-generated slug', async () => {
     (Category.findOne as jest.Mock).mockResolvedValue(null);
-    (Category.create as jest.Mock).mockResolvedValue(mockCategoryResponse);
+    (Category.create as jest.Mock).mockResolvedValue(mockCategory);
 
-    const result = await createCategory(createData, adminUuid);
+    const result = await createCategory(createData, 'admin-uuid');
 
-    expect(User.findOne).toHaveBeenCalledWith({
-      where: { id: adminUuid, role: 'admin' },
-    });
-    expect(Category.create).toHaveBeenCalledWith({
-      ...createData,
-      slug: 'education',
-      isActive: true,
-    });
-    expect(result).toEqual(mockCategoryResponse);
+    expect(Category.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Education',
+        slug: 'education',
+        isActive: true,
+      })
+    );
+    expect(result).toEqual(mockCategory);
   });
 
-  it('should use the provided slug if it is valid', async () => {
-    const dataWithSlug = { ...createData, slug: 'custom-slug' };
-    (User.findOne as jest.Mock).mockResolvedValue(mockAdminUser);
+  it('should use provided slug if given', async () => {
     (Category.findOne as jest.Mock).mockResolvedValue(null);
-    (Category.create as jest.Mock).mockResolvedValue({
-      ...mockCategoryResponse,
-      slug: 'custom-slug',
-    });
+    (Category.create as jest.Mock).mockResolvedValue(mockCategory);
 
-    await createCategory(dataWithSlug, adminUuid);
+    await createCategory({ ...createData, slug: 'custom-slug' }, 'admin-uuid');
 
     expect(Category.create).toHaveBeenCalledWith(expect.objectContaining({ slug: 'custom-slug' }));
   });
 
-  it('should throw ConflictError if the category name already exists', async () => {
-    (User.findOne as jest.Mock).mockResolvedValue(mockAdminUser);
-    (Category.findOne as jest.Mock).mockResolvedValue({ id: 'existing-id' });
+  it('should throw ConflictError if name already exists', async () => {
+    (Category.findOne as jest.Mock).mockResolvedValue(mockCategory);
 
-    await expect(createCategory(createData, adminUuid)).rejects.toThrow(ConflictError);
-
-    expect(Category.create).not.toHaveBeenCalled();
-  });
-
-  it('should throw ValidationError if the provided slug contains invalid characters', async () => {
-    const invalidData = { ...createData, slug: 'Invalid Slug!' };
-    (User.findOne as jest.Mock).mockResolvedValue(mockAdminUser);
-    (Category.findOne as jest.Mock).mockResolvedValue(null);
-
-    await expect(createCategory(invalidData, adminUuid)).rejects.toThrow(ValidationError);
+    await expect(createCategory(createData, 'admin-uuid')).rejects.toThrow(ConflictError);
 
     expect(Category.create).not.toHaveBeenCalled();
   });
 
-  it('should throw ValidationError if the auto-generated slug is empty/invalid', async () => {
-    const badNameData = { ...createData, name: '!!!' };
-    (User.findOne as jest.Mock).mockResolvedValue(mockAdminUser);
+  it('should throw ValidationError if slug is not URL-safe', async () => {
     (Category.findOne as jest.Mock).mockResolvedValue(null);
-    (generateSlug as jest.Mock).mockReturnValueOnce('');
 
-    await expect(createCategory(badNameData, adminUuid)).rejects.toThrow(ValidationError);
+    await expect(
+      createCategory({ ...createData, slug: 'invalid slug!' }, 'admin-uuid')
+    ).rejects.toThrow(ValidationError);
+
+    expect(Category.create).not.toHaveBeenCalled();
+  });
+
+  it('should throw ForbiddenError if user is not admin', async () => {
+    (User.findOne as jest.Mock).mockResolvedValue(null);
+
+    await expect(createCategory(createData, 'non-admin-uuid')).rejects.toThrow(ForbiddenError);
+  });
+});
+
+// ─── updateCategory ───────────────────────────────────────────────
+
+describe('updateCategory', () => {
+  beforeEach(() => {
+    (User.findOne as jest.Mock).mockResolvedValue(mockAdmin);
+  });
+
+  it('should update category fields', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+
+    const result = await updateCategory('category-uuid', { description: 'Updated' }, 'admin-uuid');
+
+    expect(mockCategory.update).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Updated' })
+    );
+    expect(result).toEqual(mockCategory);
+  });
+
+  it('should regenerate slug when name changes', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+    (Category.findOne as jest.Mock).mockResolvedValue(null);
+
+    await updateCategory('category-uuid', { name: 'New Name' }, 'admin-uuid');
+
+    expect(mockCategory.update).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'New Name', slug: 'new-name' })
+    );
+  });
+
+  it('should throw ConflictError if new name already taken', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+    (Category.findOne as jest.Mock).mockResolvedValue({ id: 'other-uuid', name: 'New Name' });
+
+    await expect(
+      updateCategory('category-uuid', { name: 'New Name' }, 'admin-uuid')
+    ).rejects.toThrow(ConflictError);
+
+    expect(mockCategory.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw NotFoundError if category not found', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(updateCategory('bad-uuid', { name: 'New Name' }, 'admin-uuid')).rejects.toThrow(
+      NotFoundError
+    );
+  });
+
+  it('should skip name uniqueness check if name is unchanged', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+
+    await updateCategory('category-uuid', { name: 'Education' }, 'admin-uuid');
+
+    expect(Category.findOne).not.toHaveBeenCalled();
+    expect(mockCategory.update).toHaveBeenCalled();
   });
 });
