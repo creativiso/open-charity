@@ -3,6 +3,7 @@ import { Category, Campaign, User, sequelize } from '../../src/models';
 import {
   createCategory,
   deleteCategory,
+  getActiveCategories,
   toggleCategoryStatus,
   updateCategory,
 } from '../../src/services/categoryService';
@@ -16,6 +17,7 @@ jest.mock('../../src/models', () => ({
     findAll: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    scope: jest.fn().mockReturnThis(),
   },
   Campaign: {
     count: jest.fn(),
@@ -281,5 +283,29 @@ describe('deleteCategory', () => {
     await expect(deleteCategory('category-uuid', 'non-admin-uuid')).rejects.toThrow(ForbiddenError);
 
     expect(mockCategory.destroy).not.toHaveBeenCalled();
+  });
+});
+
+// ─── getActiveCategories ──────────────────────────────────────────
+
+describe('getActiveCategories', () => {
+  it('should return only active categories ordered by displayOrder', async () => {
+    (Category.findAll as jest.Mock).mockResolvedValue([mockCategory]);
+
+    const result = await getActiveCategories();
+
+    expect(Category.scope).toHaveBeenCalledWith(['active', 'ordered']);
+
+    expect(Category.findAll).toHaveBeenCalledWith();
+
+    expect(result).toHaveLength(1);
+  });
+
+  it('should return empty array if no active categories', async () => {
+    (Category.findAll as jest.Mock).mockResolvedValue([]);
+
+    const result = await getActiveCategories();
+
+    expect(result).toHaveLength(0);
   });
 });

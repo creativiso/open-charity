@@ -155,3 +155,14 @@ export const deleteCategory = async (id: string, adminUserId: string) => {
     throw err;
   }
 };
+
+export const getActiveCategories = async () => {
+  try {
+    const activeCategories = await Category.scope(['active', 'ordered']).findAll();
+
+    return activeCategories;
+  } catch (err) {
+    console.error('Could not get active categories:', err);
+    throw err;
+  }
+};
