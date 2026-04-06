@@ -1,4 +1,4 @@
-import { Category, sequelize, User } from '../models';
+import { Campaign, Category, sequelize, User } from '../models';
 
 import { CreateCategoryData, UpdateCategoryData } from '../interfaces/categoryService.interface';
 
@@ -91,26 +91,67 @@ export const updateCategory = async (id: string, data: UpdateCategoryData, admin
 };
 
 export const toggleCategoryStatus = async (id: string, adminUserId: string) => {
-  const category = await Category.findByPk(id);
+  try {
+    const category = await Category.findByPk(id);
 
-  if (!category) {
-    throw new NotFoundError('Could not find a category with this ID');
+    if (!category) {
+      throw new NotFoundError('Could not find a category with this ID');
+    }
+
+    const adminMembership = await User.findOne({
+      where: {
+        id: adminUserId,
+        role: 'admin',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permissions');
+    }
+
+    await category.update({
+      isActive: !category.isActive,
+    });
+
+    return category;
+  } catch (err) {
+    console.error('Could not toggle category status:', err);
+    throw err;
   }
+};
 
-  const adminMembership = await User.findOne({
-    where: {
-      id: adminUserId,
-      role: 'admin',
-    },
-  });
+export const deleteCategory = async (id: string, adminUserId: string) => {
+  try {
+    const category = await Category.findByPk(id);
 
-  if (!adminMembership) {
-    throw new ForbiddenError('You do not have admin permissions');
+    if (!category) {
+      throw new NotFoundError('Could not find a category with this ID');
+    }
+
+    const adminMembership = await User.findOne({
+      where: {
+        id: adminUserId,
+        role: 'admin',
+      },
+    });
+
+    if (!adminMembership) {
+      throw new ForbiddenError('You do not have admin permissions');
+    }
+
+    const campaignsUsing = await Campaign.count({
+      where: {
+        categoryId: category.id,
+      },
+    });
+
+    if (campaignsUsing > 0) {
+      throw new ConflictError(`Cannot delete this category: ${campaignsUsing} are using it`);
+    }
+
+    await category.destroy();
+  } catch (err) {
+    console.error('Could not delete category:', err);
+    throw err;
   }
-
-  await category.update({
-    isActive: !category.isActive,
-  });
-
-  return category;
 };

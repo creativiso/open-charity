@@ -2,6 +2,7 @@ import { Category, Campaign, User, sequelize } from '../../src/models';
 
 import {
   createCategory,
+  deleteCategory,
   toggleCategoryStatus,
   updateCategory,
 } from '../../src/services/categoryService';
@@ -235,5 +236,50 @@ describe('toggleCategoryStatus', () => {
     );
 
     expect(mockCategory.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─── deleteCategory ───────────────────────────────────────────────
+
+describe('deleteCategory', () => {
+  beforeEach(() => {
+    (User.findOne as jest.Mock).mockResolvedValue(mockAdmin);
+  });
+
+  it('should delete a category if it has no campaigns', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+    (Campaign.count as jest.Mock).mockResolvedValue(0); // No campaigns found
+
+    const result = await deleteCategory('category-uuid', 'admin-uuid');
+
+    expect(Campaign.count).toHaveBeenCalledWith({
+      where: { categoryId: 'category-uuid' },
+    });
+    expect(mockCategory.destroy).toHaveBeenCalled();
+    expect(result).toBeUndefined();
+  });
+
+  it('should throw ConflictError if category is in use by campaigns', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+    (Campaign.count as jest.Mock).mockResolvedValue(5); // 5 campaigns found
+
+    await expect(deleteCategory('category-uuid', 'admin-uuid')).rejects.toThrow(ConflictError);
+
+    expect(mockCategory.destroy).not.toHaveBeenCalled();
+  });
+
+  it('should throw NotFoundError if category does not exist', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(null);
+
+    await expect(deleteCategory('bad-uuid', 'admin-uuid')).rejects.toThrow(NotFoundError);
+  });
+
+  it('should throw ForbiddenError if user is not an admin', async () => {
+    (Category.findByPk as jest.Mock).mockResolvedValue(mockCategory);
+    (User.findOne as jest.Mock).mockResolvedValue(null);
+
+    await expect(deleteCategory('category-uuid', 'non-admin-uuid')).rejects.toThrow(ForbiddenError);
+
+    expect(mockCategory.destroy).not.toHaveBeenCalled();
   });
 });
