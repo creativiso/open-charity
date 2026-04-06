@@ -4,6 +4,7 @@ import {
   createCategory,
   deleteCategory,
   getActiveCategories,
+  getAllCategories,
   toggleCategoryStatus,
   updateCategory,
 } from '../../src/services/categoryService';
@@ -305,6 +306,31 @@ describe('getActiveCategories', () => {
     (Category.findAll as jest.Mock).mockResolvedValue([]);
 
     const result = await getActiveCategories();
+
+    expect(result).toHaveLength(0);
+  });
+});
+
+// ─── getAllCategories ─────────────────────────────────────────────
+
+describe('getAllCategories', () => {
+  it('should return all categories including inactive', async () => {
+    const inactiveCategory = { ...mockCategory, id: 'inactive-uuid', isActive: false };
+    (Category.findAll as jest.Mock).mockResolvedValue([mockCategory, inactiveCategory]);
+
+    const result = await getAllCategories();
+
+    expect(Category.scope).toHaveBeenCalledWith('ordered');
+
+    expect(Category.findAll).toHaveBeenCalledWith();
+
+    expect(result).toHaveLength(2);
+  });
+
+  it('should return empty array if no categories', async () => {
+    (Category.findAll as jest.Mock).mockResolvedValue([]);
+
+    const result = await getAllCategories();
 
     expect(result).toHaveLength(0);
   });

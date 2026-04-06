@@ -166,3 +166,14 @@ export const getActiveCategories = async () => {
     throw err;
   }
 };
+
+export const getAllCategories = async () => {
+  try {
+    const activeCategories = await Category.scope('ordered').findAll();
+
+    return activeCategories;
+  } catch (err) {
+    console.error('Could not get categories:', err);
+    throw err;
+  }
+};
