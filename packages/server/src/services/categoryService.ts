@@ -182,15 +182,15 @@ export const getCategoryById = async (id: string) => {
   try {
     const category = await Category.findByPk(id, {
       attributes: {
-        include: [[sequelize.fn('COUNT', sequelize.col('Campaigns.id')), 'campaignCount']],
+        include: [
+          [
+            sequelize.literal(
+              '(SELECT COUNT(*) FROM Campaigns WHERE Campaigns.categoryId = Category.id)'
+            ),
+            'campaignCount',
+          ],
+        ],
       },
-      include: [
-        {
-          model: Campaign,
-          attributes: [],
-        },
-      ],
-      group: ['Category.id'],
     });
 
     return category;
@@ -228,8 +228,13 @@ export const reorderCategories = async (orderedIds: string[], adminUserId: strin
         );
       }
     });
+
+    return await Category.findAll({
+      where: { id: orderedIds },
+      order: [['displayOrder', 'ASC']],
+    });
   } catch (err) {
-    console.error('Could not get category:', err);
+    console.error('Could not reorder categories:', err);
     throw err;
   }
 };
