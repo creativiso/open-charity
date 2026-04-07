@@ -6,6 +6,7 @@ import {
   updateMemberRole,
 } from '../../services/organizationService';
 import { handleError } from '../../utils';
+import { ValidationError } from '../../errors';
 
 export const getPendingMemberships = async (req: Request, res: Response) => {
   try {
@@ -42,8 +43,7 @@ export const rejectMember = async (req: Request, res: Response) => {
     const rejectionReason = req.body?.rejectionReason;
 
     if (!rejectionReason) {
-      res.status(400).json({ error: true, message: 'Rejection reason is required' });
-      return;
+      throw new ValidationError('Rejection reason is required');
     }
 
     const rejectedMembership = await rejectMembership(membershipId, adminId, rejectionReason);
@@ -62,11 +62,7 @@ export const updateMemberRoleHandler = async (req: Request, res: Response) => {
     const role = req.body?.role;
 
     if (!role || !['admin', 'editor'].includes(role)) {
-      res.status(400).json({
-        error: true,
-        message: "Invalid or missing role. Role must be either 'admin' or 'editor'",
-      });
-      return;
+      throw new ValidationError("Invalid or missing role. Role must be either 'admin' or 'editor'");
     }
 
     const updatedMembership = await updateMemberRole(membershipId, role, adminId);

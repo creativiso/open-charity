@@ -6,7 +6,8 @@
     "skipLibCheck": true,
     "outDir": "./dist",
     "rootDir": "../../",
-    "strict": true
+    "strict": true,
+    "types": ["jest", "node"]
   },
-  "include": ["src/**/*", "config/**/*"]
+  "include": ["src/**/*", "config/**/*", "tests/**/*", "**/*.test.ts", "**/*.spec.ts"]
 }
