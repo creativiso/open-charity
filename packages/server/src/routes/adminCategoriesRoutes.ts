@@ -4,6 +4,7 @@ import {
   createCategory,
   deleteCategory,
   getCategories,
+  reorderCategories,
   toggleCategoryStatus,
   updateCategory,
 } from '../controllers/api/adminCategoriesController';
@@ -37,6 +38,7 @@ adminCategoriesRouter.put(
 );
 
 adminCategoriesRouter.patch('/:id/toggle', verifyToken, requireAdminJWT, toggleCategoryStatus);
+adminCategoriesRouter.patch('/reorder', verifyToken, requireAdminJWT, reorderCategories);
 
 adminCategoriesRouter.delete('/:id', verifyToken, requireAdminJWT, deleteCategory);
 

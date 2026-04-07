@@ -76,3 +76,17 @@ export const deleteCategory = async (req: Request, res: Response) => {
     handleError(err, res);
   }
 };
+
+export const reorderCategories = async (req: Request, res: Response) => {
+  try {
+    const { orderedIds } = req.body;
+    const adminUserId = req.user!.id;
+
+    const orderedCategories = await categoryService.reorderCategories(orderedIds, adminUserId);
+
+    res.status(200).json(orderedCategories);
+  } catch (err) {
+    console.error('Could not reorder categories:' + err);
+    handleError(err, res);
+  }
+};
