@@ -7,6 +7,7 @@ import organizationsRouter from './routes/organizationsRoutes';
 import adminAuthRouter from './routes/adminAuthRoutes';
 import adminOrganizationsRouter from './routes/adminOrganizationsRoutes';
 import adminOrgMembersRoutes from './routes/adminOrgMembersRoutes';
+import categoriesRouter from './routes/categoriesRoutes';
 
 const router: Router = Router();
 
@@ -16,6 +17,7 @@ router.use('/api/admin/organization-members', adminOrgMembersRoutes);
 router.use('/auth', authController);
 router.use('/campaigns', campaignsController);
 router.use('/organizations', organizationsRouter);
+router.use('/categories', categoriesRouter);
 
 router.use((req, res) => {
   res.status(404).render('404', { title: 'Page Not Found' });
