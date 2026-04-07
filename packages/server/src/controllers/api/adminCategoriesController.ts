@@ -48,3 +48,17 @@ export const updateCategory = async (req: Request, res: Response) => {
     handleError(err, res);
   }
 };
+
+export const toggleCategoryStatus = async (req: Request, res: Response) => {
+  try {
+    const categoryId = req.params.id as string;
+    const adminUserId = req.user!.id;
+
+    const updatedCategory = await categoryService.toggleCategoryStatus(categoryId, adminUserId);
+
+    res.status(200).json(updatedCategory);
+  } catch (err) {
+    console.error('Could not toggle category:' + err);
+    handleError(err, res);
+  }
+};

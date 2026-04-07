@@ -3,6 +3,7 @@ import express from 'express';
 import {
   createCategory,
   getCategories,
+  toggleCategoryStatus,
   updateCategory,
 } from '../controllers/api/adminCategoriesController';
 import { requireAdminJWT, verifyToken } from '../middleware/jwtAuth';
@@ -33,5 +34,7 @@ adminCategoriesRouter.put(
   handleValidationErrors,
   updateCategory
 );
+
+adminCategoriesRouter.patch('/:id/toggle', verifyToken, requireAdminJWT, toggleCategoryStatus);
 
 export default adminCategoriesRouter;
