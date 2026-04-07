@@ -22,3 +22,18 @@ export const createCategoryValidation = [
     .isInt({ min: 0 })
     .withMessage('Display order must be a non-negative integer'),
 ];
+
+export const updateCategoryValidation = [
+  body('name')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ min: 3, max: 100 })
+    .withMessage('Category name must be between 3 and 100 characters'),
+
+  body('description').optional({ checkFalsy: true }).trim(),
+
+  body('displayOrder')
+    .optional({ checkFalsy: true })
+    .isInt({ min: 0 })
+    .withMessage('Display order must be a non-negative integer'),
+];

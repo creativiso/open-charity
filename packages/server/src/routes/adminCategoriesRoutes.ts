@@ -1,8 +1,15 @@
 import express from 'express';
 
-import { createAdminCategory, getCategories } from '../controllers/api/adminCategoriesController';
+import {
+  createCategory,
+  getCategories,
+  updateCategory,
+} from '../controllers/api/adminCategoriesController';
 import { requireAdminJWT, verifyToken } from '../middleware/jwtAuth';
-import { createCategoryValidation } from '../validators/categoryValidators';
+import {
+  createCategoryValidation,
+  updateCategoryValidation,
+} from '../validators/categoryValidators';
 import { handleValidationErrors } from '../middleware/handleValidationErrors';
 
 const adminCategoriesRouter = express.Router();
@@ -15,7 +22,16 @@ adminCategoriesRouter.post(
   requireAdminJWT,
   createCategoryValidation,
   handleValidationErrors,
-  createAdminCategory
+  createCategory
+);
+
+adminCategoriesRouter.put(
+  '/:id',
+  verifyToken,
+  requireAdminJWT,
+  updateCategoryValidation,
+  handleValidationErrors,
+  updateCategory
 );
 
 export default adminCategoriesRouter;

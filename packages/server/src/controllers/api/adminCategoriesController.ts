@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 
-import { createCategory, getAllCategories } from '../../services/categoryService';
+import * as categoryService from '../../services/categoryService';
 
 import { handleError } from '../../utils';
-import { CreateCategoryData } from '../../interfaces/categoryService.interface';
+import { CreateCategoryData, UpdateCategoryData } from '../../interfaces/categoryService.interface';
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await getAllCategories();
+    const categories = await categoryService.getAllCategories();
 
     res.status(200).json(categories);
   } catch (err) {
@@ -16,16 +16,35 @@ export const getCategories = async (req: Request, res: Response) => {
   }
 };
 
-export const createAdminCategory = async (req: Request, res: Response) => {
+export const createCategory = async (req: Request, res: Response) => {
   try {
     const categoryData: CreateCategoryData = req.body;
     const adminUserId = req.user!.id;
 
-    const createdCategory = await createCategory(categoryData, adminUserId);
+    const createdCategory = await categoryService.createCategory(categoryData, adminUserId);
 
     res.status(201).json(createdCategory);
   } catch (err) {
     console.error('Could not create category:' + err);
+    handleError(err, res);
+  }
+};
+
+export const updateCategory = async (req: Request, res: Response) => {
+  try {
+    const categoryId = req.params.id as string;
+    const updatedCategoryData: UpdateCategoryData = req.body;
+    const adminUserId = req.user!.id;
+
+    const updatedCategory = await categoryService.updateCategory(
+      categoryId,
+      updatedCategoryData,
+      adminUserId
+    );
+
+    res.status(200).json(updatedCategory);
+  } catch (err) {
+    console.error('Could not update category:' + err);
     handleError(err, res);
   }
 };
