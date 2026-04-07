@@ -169,7 +169,18 @@ export const getActiveCategories = async () => {
 
 export const getAllCategories = async () => {
   try {
-    const activeCategories = await Category.scope('ordered').findAll();
+    const activeCategories = await Category.scope('ordered').findAll({
+      attributes: {
+        include: [
+          [
+            sequelize.literal(
+              '(SELECT COUNT(*) FROM Campaigns WHERE Campaigns.categoryId = Category.id)'
+            ),
+            'campaignCount',
+          ],
+        ],
+      },
+    });
 
     return activeCategories;
   } catch (err) {
