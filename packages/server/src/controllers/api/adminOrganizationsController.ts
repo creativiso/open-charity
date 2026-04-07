@@ -7,6 +7,7 @@ import {
 } from '../../services/organizationService';
 import { UpdateOrganizationData } from '../../interfaces/organizationService.interface';
 import { handleError } from '../../utils';
+import { ValidationError } from '../../errors';
 
 export const getPendingOrganizations = async (req: Request, res: Response) => {
   try {
@@ -43,8 +44,7 @@ export const rejectOrg = async (req: Request, res: Response) => {
     const rejectionReason = req.body?.rejectionReason;
 
     if (!rejectionReason) {
-      res.status(400).json({ error: true, message: 'Rejection reason is required' });
-      return;
+      throw new ValidationError('Rejection reason is required');
     }
 
     const rejectedOrganization = await rejectOrganization(organizationId, adminId, rejectionReason);
