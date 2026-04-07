@@ -58,7 +58,21 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
 
     res.status(200).json(updatedCategory);
   } catch (err) {
-    console.error('Could not toggle category:' + err);
+    console.error('Could not toggle category status:' + err);
+    handleError(err, res);
+  }
+};
+
+export const deleteCategory = async (req: Request, res: Response) => {
+  try {
+    const categoryId = req.params.id as string;
+    const adminUserId = req.user!.id;
+
+    await categoryService.deleteCategory(categoryId, adminUserId);
+
+    res.status(204).send();
+  } catch (err) {
+    console.error('Could not delete category:' + err);
     handleError(err, res);
   }
 };

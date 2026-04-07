@@ -2,6 +2,7 @@ import express from 'express';
 
 import {
   createCategory,
+  deleteCategory,
   getCategories,
   toggleCategoryStatus,
   updateCategory,
@@ -36,5 +37,7 @@ adminCategoriesRouter.put(
 );
 
 adminCategoriesRouter.patch('/:id/toggle', verifyToken, requireAdminJWT, toggleCategoryStatus);
+
+adminCategoriesRouter.delete('/:id', verifyToken, requireAdminJWT, deleteCategory);
 
 export default adminCategoriesRouter;
