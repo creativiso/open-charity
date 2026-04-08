@@ -169,7 +169,18 @@ export const getActiveCategories = async () => {
 
 export const getAllCategories = async () => {
   try {
-    const activeCategories = await Category.scope('ordered').findAll();
+    const activeCategories = await Category.scope('ordered').findAll({
+      attributes: {
+        include: [
+          [
+            sequelize.literal(
+              '(SELECT COUNT(*) FROM Campaigns WHERE Campaigns.categoryId = Category.id)'
+            ),
+            'campaignCount',
+          ],
+        ],
+      },
+    });
 
     return activeCategories;
   } catch (err) {
@@ -202,8 +213,8 @@ export const getCategoryById = async (id: string) => {
 
 export const reorderCategories = async (orderedIds: string[], adminUserId: string) => {
   try {
-    if (!orderedIds || orderedIds.length === 0) {
-      throw new ValidationError('orderedIds list cannot be empty');
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      throw new ValidationError('orderedIds must be a non-empty array');
     }
 
     const adminMembership = await User.findOne({
@@ -217,12 +228,14 @@ export const reorderCategories = async (orderedIds: string[], adminUserId: strin
       throw new ForbiddenError('You do not have admin permissions');
     }
 
+    const uniqueIds = [...new Set(orderedIds)];
+
     await sequelize.transaction(async (t) => {
-      for (let i = 0; i < orderedIds.length; i++) {
+      for (let i = 0; i < uniqueIds.length; i++) {
         await Category.update(
           { displayOrder: i },
           {
-            where: { id: orderedIds[i] },
+            where: { id: uniqueIds[i] },
             transaction: t,
           }
         );

@@ -8,11 +8,11 @@ import {
   updateMemberRoleHandler,
 } from '../controllers/api/adminOrgMembersController';
 
-const adminOrgMembersRoutes: Router = Router();
+const adminOrgMembersRouter: Router = Router();
 
-adminOrgMembersRoutes.get('/pending', verifyToken, requireAdminJWT, getPendingMemberships);
-adminOrgMembersRoutes.patch('/:id/approve', verifyToken, requireAdminJWT, approveMember);
-adminOrgMembersRoutes.patch('/:id/reject', verifyToken, requireAdminJWT, rejectMember);
-adminOrgMembersRoutes.patch('/:id/role', verifyToken, requireAdminJWT, updateMemberRoleHandler);
+adminOrgMembersRouter.get('/pending', verifyToken, requireAdminJWT, getPendingMemberships);
+adminOrgMembersRouter.patch('/:id/approve', verifyToken, requireAdminJWT, approveMember);
+adminOrgMembersRouter.patch('/:id/reject', verifyToken, requireAdminJWT, rejectMember);
+adminOrgMembersRouter.patch('/:id/role', verifyToken, requireAdminJWT, updateMemberRoleHandler);
 
-export default adminOrgMembersRoutes;
+export default adminOrgMembersRouter;

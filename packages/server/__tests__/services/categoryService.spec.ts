@@ -32,7 +32,7 @@ jest.mock('../../src/models', () => ({
     where: jest.fn(),
     fn: jest.fn(),
     col: jest.fn(),
-    literal: jest.fn(),
+    literal: jest.fn((str) => str),
     transaction: jest.fn(),
   },
 }));
@@ -324,7 +324,11 @@ describe('getAllCategories', () => {
 
     expect(Category.scope).toHaveBeenCalledWith('ordered');
 
-    expect(Category.findAll).toHaveBeenCalledWith();
+    expect(Category.findAll).toHaveBeenCalledWith({
+      attributes: {
+        include: [[expect.anything(), 'campaignCount']],
+      },
+    });
 
     expect(result).toHaveLength(2);
   });
