@@ -9,15 +9,19 @@ export const generateUUID = (): string => {
 };
 
 export const generateSlug = (text: string): string => {
-  return text
+  const slug = text
     .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[^\w-]+/g, '')
+    .replace(/[^a-z0-9-]+/g, '-')
     .replace(/--+/g, '-')
     .replace(/^-+/, '')
     .replace(/-+$/, '');
+
+  return slug || 'unnamed';
 };
 
 export const formatDateSimple = (date: Date): string => {
