@@ -15,7 +15,17 @@ export const createCategoryValidation = [
       }
     }),
 
-  body('description').optional({ checkFalsy: true }).trim(),
+  body('slug')
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^[a-z0-9-]+$/)
+    .withMessage('Slug can only contain lowercase letters, numbers, and hyphens'),
+
+  body('description')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Category description must be at most 500 characters'),
 
   body('displayOrder')
     .optional({ checkFalsy: true })
@@ -30,7 +40,17 @@ export const updateCategoryValidation = [
     .isLength({ min: 3, max: 100 })
     .withMessage('Category name must be between 3 and 100 characters'),
 
-  body('description').optional({ checkFalsy: true }).trim(),
+  body('slug')
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^[a-z0-9-]+$/)
+    .withMessage('Slug can only contain lowercase letters, numbers, and hyphens'),
+
+  body('description')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Category description must be at most 500 characters'),
 
   body('displayOrder')
     .optional({ checkFalsy: true })
